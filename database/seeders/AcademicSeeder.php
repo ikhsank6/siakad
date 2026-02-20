@@ -13,6 +13,7 @@ use App\Models\Teacher;
 use App\Models\TeacherConfig;
 use App\Models\TimeSlot;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -38,6 +39,9 @@ class AcademicSeeder extends Seeder
         $this->call(UserSeeder::class);
         \Illuminate\Database\Eloquent\Model::reguard();
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+
+        $teacherRole = Role::where('slug', 'teacher')->first();
+        $studentRole = Role::where('slug', 'student')->first();
 
         // 1. Academic Year
         $ay = AcademicYear::create([
@@ -68,7 +72,7 @@ class AcademicSeeder extends Seeder
         }
 
         // 3. Rooms
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 40; $i++) {
             Room::create([
                 'name' => 'Ruang ' . $i,
                 'capacity' => 40,
@@ -99,6 +103,7 @@ class AcademicSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'is_active' => true,
             ]);
+            $user->syncRoles([$teacherRole->id]);
             
             $teacher = Teacher::create([
                 'user_id' => $user->id,
@@ -114,37 +119,61 @@ class AcademicSeeder extends Seeder
         }
 
         // 6. Classes
-        for ($i = 1; $i <= 3; $i++) {
+        $classNames = [
+            'X-1', 'X-2', 'X-3', 'X-4', 'X-5', 'X-6', 'X-7', 'X-8',
+            'XI IPA 1', 'XI IPA 2', 'XI IPS 1', 'XI IPS 2', 'XI Bahasa',
+            'XII IPA 1', 'XII IPA 2', 'XII IPS 1', 'XII IPS 2', 'XII Bahasa',
+        ];
+
+        $rooms = Room::all();
+
+        foreach ($classNames as $index => $name) {
+            $gradeLevel = str_starts_with($name, 'X-') ? 10 : (str_starts_with($name, 'XI ') ? 11 : 12);
+            $major = null;
+            if (str_contains($name, 'IPA')) $major = 'IPA';
+            elseif (str_contains($name, 'IPS')) $major = 'IPS';
+            elseif (str_contains($name, 'Bahasa')) $major = 'Bahasa';
+            
+            // Assign room from pool
+            $roomId = isset($rooms[$index]) ? $rooms[$index]->id : null;
+
             $class = AcademicClass::create([
-                'name' => 'X-IPA-' . $i,
-                'academic_year_id' => $ay->id,
-                'grade_level' => 10,
+                'name' => $name,
+                'grade_level' => $gradeLevel,
+                'major' => $major,
+                'room_id' => $roomId,
             ]);
 
             // Assign subjects to class
             $teacherModels = Teacher::all();
-            foreach ($subjectModels as $index => $sm) {
+            foreach ($subjectModels as $sIndex => $sm) {
+                // Distribute subjects logically
+                $teacher = $teacherModels[($index + $sIndex) % 10];
+                
+                $teacher->subjects()->syncWithoutDetaching([$sm->id]);
+
                 ClassSubject::create([
                     'class_id' => $class->id,
                     'subject_id' => $sm->id,
-                    'teacher_id' => $teacherModels[$index % 10]->id, // Simple distribution
+                    'teacher_id' => $teacher->id,
                     'hours_per_week' => $sm->default_hours_per_week,
                 ]);
             }
 
             // 7. Students per class
-            for ($j = 1; $j <= 20; $j++) {
+            for ($j = 1; $j <= 10; $j++) {
+                // Reduce student count per class for performance of seeder
                 $studentUser = User::create([
-                    'name' => "Student {$i}-{$j}",
-                    'email' => "student-class{$i}-{$j}@example.com",
+                    'name' => "Student {$name}-{$j}",
+                    'email' => "student-" . \Illuminate\Support\Str::slug($name) . "-{$j}@example.com",
                     'password' => bcrypt('password'),
                     'is_active' => true,
                 ]);
-
+                $studentUser->syncRoles([$studentRole->id]);
                 Student::create([
                     'user_id' => $studentUser->id,
                     'class_id' => $class->id,
-                    'nisn' => '2024' . str_pad($i, 2, '0', STR_PAD_LEFT) . str_pad($j, 3, '0', STR_PAD_LEFT),
+                    'nisn' => '2025' . str_pad($gradeLevel, 2, '0', STR_PAD_LEFT) . str_pad($index, 2, '0', STR_PAD_LEFT) . str_pad($j, 2, '0', STR_PAD_LEFT),
                     'name' => $studentUser->name,
                 ]);
             }

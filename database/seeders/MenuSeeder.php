@@ -180,6 +180,22 @@ class MenuSeeder extends Seeder
                         'order' => 4,
                         'is_active' => true,
                     ],
+                    [
+                        'name' => 'Rooms',
+                        'slug' => 'rooms',
+                        'icon' => 'building-library',
+                        'route' => 'academic.rooms.index',
+                        'order' => 5,
+                        'is_active' => true,
+                    ],
+                    [
+                        'name' => 'Classes',
+                        'slug' => 'classes',
+                        'icon' => 'rectangle-group',
+                        'route' => 'academic.classes.index',
+                        'order' => 6,
+                        'is_active' => true,
+                    ],
                 ],
             ],
         ];

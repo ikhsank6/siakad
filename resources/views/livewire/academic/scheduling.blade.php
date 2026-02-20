@@ -16,7 +16,9 @@
                         @endforeach
                     </flux:select>
 
-                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
+                        <flux:checkbox wire:model="useDynamicRooms" label="Use Dynamic Rooms" description="If checked, classes will not be strictly assigned to a single room." />
+                        
                         <flux:button wire:click="generateSchedule" variant="primary" class="w-full" icon="sparkles"
                             wire:loading.attr="disabled">
                             <span wire:loading.remove wire:target="generateSchedule">Simulate Schedule</span>
@@ -88,7 +90,7 @@
                 </x-ui.card>
                 
                 <x-ui.modal wire:model="showOverrideModal" title="Override Teaching Hours" formId="teacher-override-form">
-                    <form wire:submit="saveTeacherConfig" id="teacher-override-form" class="space-y-4">
+                    <form wire:submit="saveTeacherConfig" id="teacher-override-form" class="space-y-4" novalidate>
                         <div class="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                             <span class="text-xs text-zinc-500 block">Teacher</span>
                             <span class="font-bold text-zinc-900 dark:text-white">{{ $editingTeacherName }}</span>

@@ -17,17 +17,13 @@ class AcademicClass extends Model
 
     protected $fillable = [
         'name',
-        'academic_year_id',
         'grade_level',
+        'major',
+        'room_id',
         'created_by',
         'updated_by',
         'deleted_by',
     ];
-
-    public function academicYear(): BelongsTo
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
 
     public function students(): HasMany
     {
@@ -37,5 +33,10 @@ class AcademicClass extends Model
     public function schedules(): HasMany
     {
         return $this->hasMany(Schedule::class, 'class_id');
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class, 'room_id');
     }
 }

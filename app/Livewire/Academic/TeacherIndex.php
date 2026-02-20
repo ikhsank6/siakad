@@ -71,29 +71,53 @@ class TeacherIndex extends Component implements HasForms
 
     public function save()
     {
+        // Validate form first - this will show errors under each field
         $data = $this->form->getState();
 
-        if ($this->record) {
-            $this->teacherRepository->update($this->record->id, $data);
-        } else {
-            $this->teacherRepository->create($data);
-        }
+        try {
+            if ($this->record) {
+                $this->teacherRepository->update($this->record->id, $data);
+                $message = 'Teacher updated successfully.';
+            } else {
+                $this->teacherRepository->create($data);
+                $message = 'Teacher created successfully.';
+            }
 
-        $this->dispatch('notify', text: 'Teacher saved successfully.', variant: 'success');
-        $this->showModal = false;
-        $this->dispatch('refresh');
+            $this->dispatch('notify', text: $message, variant: 'success');
+            $this->showModal = false;
+            $this->dispatch('refresh');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
+        }
     }
 
     public function delete(Teacher $teacher)
     {
-        $this->teacherRepository->delete($teacher->id);
-        $this->dispatch('notify', text: 'Teacher deleted successfully.', variant: 'success');
+        try {
+            $this->teacherRepository->delete($teacher->id);
+            $this->dispatch('notify', text: 'Teacher deleted successfully.', variant: 'success');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
+        }
     }
 
     public function render()
     {
+        // Actually, $this->teacherRepository->search returns paginator, so we can't easily append with() there.
+        // We will just let it be, or update BaseRepository to support relationships.
+        // Since it's a small app, we'll let it be for now. But better to eager load if possible.
+        // I will update the BaseRepository search temporarily or just let it query.
+        $query = $this->teacherRepository->query()->with('subjects');
+        
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->orWhere('name', 'like', "%{$this->search}%")
+                  ->orWhere('nip', 'like', "%{$this->search}%");
+            });
+        }
+        
         return view('livewire.academic.teacher-index', [
-            'teachers' => $this->teacherRepository->search(['name', 'nip'], $this->search, $this->perPage),
+            'teachers' => $query->latest()->paginate($this->perPage),
         ]);
     }
 }

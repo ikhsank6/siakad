@@ -56,7 +56,7 @@
     </x-ui.card>
 
     <x-ui.modal wire:model="showModal" :title="$record ? 'Edit Student' : 'Create Student'" formId="student-form">
-        <form wire:submit="save" id="student-form">
+        <form wire:submit="save" id="student-form" novalidate>
             {{ $this->form }}
         </form>
     </x-ui.modal>

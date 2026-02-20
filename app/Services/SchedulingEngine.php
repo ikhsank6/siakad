@@ -28,13 +28,16 @@ class SchedulingEngine
     protected $busyClasses = [];
     protected $busyRooms = [];
     protected $teacherHours = [];
+    protected $classRoomMap = []; // Maps class_id to fixed room_id
+    protected $useDynamicRooms = false;
 
     protected $scheduleRepository;
 
-    public function __construct(AcademicYear $academicYear, ?\App\Repositories\Contracts\ScheduleRepositoryInterface $scheduleRepository = null)
+    public function __construct(AcademicYear $academicYear, ?\App\Repositories\Contracts\ScheduleRepositoryInterface $scheduleRepository = null, bool $useDynamicRooms = false)
     {
         $this->academicYear = $academicYear;
         $this->scheduleRepository = $scheduleRepository ?? app(\App\Repositories\Contracts\ScheduleRepositoryInterface::class);
+        $this->useDynamicRooms = $useDynamicRooms;
     }
 
     public function generate()
@@ -44,10 +47,8 @@ class SchedulingEngine
         // Use repository to clear draft schedules
         $this->scheduleRepository->clearDrafts($this->academicYear->id);
 
-        // 1. Get all subject requirements per class
-        $requirements = ClassSubject::whereHas('academicClass', function($q) {
-            $q->where('academic_year_id', $this->academicYear->id);
-        })->get();
+        // 1. Get all subject requirements per class (assuming global or single active year context for prototype)
+        $requirements = ClassSubject::all();
 
         // 2. Sort requirements by hours (most hours first) and teacher priority
         $requirements = $requirements->sortBy(function($req) {
@@ -69,9 +70,15 @@ class SchedulingEngine
             $subjectId = $req->subject_id;
             $teacherId = $req->teacher_id;
 
-            // If teacher is not assigned to the class subject yet, we might need to find one
-            // For now, assume teacher_id is already set in class_subjects
-            if (!$teacherId) continue;
+            // If teacher is not explicitly assigned, find an eligible teacher for the subject
+            if (!$teacherId) {
+                $teacherId = $this->findTeacherForSubject($subjectId, $hoursNeeded);
+            }
+
+            if (!$teacherId) {
+                // Could not find any teacher to accommodate this class
+                continue;
+            }
 
             for ($i = 0; $i < $hoursNeeded; $i++) {
                 $placed = false;
@@ -124,7 +131,7 @@ class SchedulingEngine
     {
         $this->timeSlots = TimeSlot::orderBy('day')->orderBy('start_time')->get();
         $this->rooms = Room::all();
-        $this->teachers = Teacher::with(['config' => function($q) {
+        $this->teachers = Teacher::with(['subjects', 'config' => function($q) {
             $q->where('academic_year_id', $this->academicYear->id);
         }])->get();
         $this->classes = AcademicClass::where('academic_year_id', $this->academicYear->id)->get();
@@ -133,10 +140,70 @@ class SchedulingEngine
         $this->busyTeachers = []; // [slot_id => [teacher_ids]]
         $this->busyClasses = [];  // [slot_id => [class_ids]]
         $this->busyRooms = [];    // [slot_id => [room_ids]]
+
+        // Map classes to fixed rooms if not using dynamic rooms
+        if (!$this->useDynamicRooms) {
+            $this->classRoomMap = [];
+            foreach ($this->classes as $index => $class) {
+                // simple 1 to 1 assignment
+                $room = $this->rooms->get($index);
+                if ($room) {
+                    $this->classRoomMap[$class->id] = $room->id;
+                } else {
+                    // Fallback to a random room if there are more classes than rooms
+                    $this->classRoomMap[$class->id] = $this->rooms->random()->id;
+                }
+            }
+        }
+    }
+
+    protected function findTeacherForSubject($subjectId, $hoursNeeded)
+    {
+        // Find teachers who specialize in this subject
+        $eligibleTeachers = $this->teachers->filter(function($teacher) use ($subjectId) {
+            return $teacher->subjects->contains('id', $subjectId);
+        });
+
+        if ($eligibleTeachers->isEmpty()) {
+            return null; // Fallback or strict error
+        }
+
+        // Sort by deficit in hours to balance workload
+        $eligibleTeachers = $eligibleTeachers->sortByDesc(function($teacher) use ($hoursNeeded) {
+            $currentHours = $this->getTeacherCurrentHours($teacher->id);
+            $maxHours = $this->getTeacherMaxHours($teacher->id);
+            
+            // If they can't take this class at all, give lowest priority or negative priority
+            if ($currentHours + $hoursNeeded > $maxHours) {
+                return -1000; 
+            }
+
+            $minHours = $this->getTeacherMinHours($teacher->id);
+            return $minHours - $currentHours;
+        });
+
+        $bestTeacher = $eligibleTeachers->first();
+        
+        // Ensure they can still fit the required hours
+        if ($this->getTeacherCurrentHours($bestTeacher->id) + $hoursNeeded > $this->getTeacherMaxHours($bestTeacher->id)) {
+            return null;
+        }
+
+        return $bestTeacher->id;
     }
 
     protected function findAvailableRoom($slotId, $classId)
     {
+        if (!$this->useDynamicRooms && isset($this->classRoomMap[$classId])) {
+            $roomId = $this->classRoomMap[$classId];
+            
+            // Still check if the room is busy by another class to avoid collisions if fallbacks were made
+            if (!isset($this->busyRooms[$slotId]) || !in_array($roomId, $this->busyRooms[$slotId])) {
+                 return $roomId;
+            }
+        }
+
+        // Logical path for dynamic rooms or if fixed room is busy: find any available room
         foreach ($this->rooms as $room) {
             if (!isset($this->busyRooms[$slotId]) || !in_array($room->id, $this->busyRooms[$slotId])) {
                 return $room->id;

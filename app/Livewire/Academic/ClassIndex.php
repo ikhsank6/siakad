@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Academic;
 
-use App\Forms\SubjectForm;
+use App\Forms\ClassForm;
 use App\Livewire\Concerns\HasTableView;
-use App\Models\Subject;
-use App\Repositories\Contracts\SubjectRepositoryInterface;
+use App\Models\AcademicClass;
+use App\Repositories\Contracts\AcademicClassRepositoryInterface;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -16,8 +16,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
-#[Title('Subjects')]
-class SubjectIndex extends Component implements HasForms
+#[Title('Classes')]
+class ClassIndex extends Component implements HasForms
 {
     use HasTableView;
     use InteractsWithForms;
@@ -30,14 +30,14 @@ class SubjectIndex extends Component implements HasForms
     public $perPage = 10;
 
     public ?array $data = [];
-    public ?Subject $record = null;
+    public ?AcademicClass $record = null;
     public $showModal = false;
 
-    protected SubjectRepositoryInterface $subjectRepository;
+    protected AcademicClassRepositoryInterface $classRepository;
 
-    public function boot(SubjectRepositoryInterface $subjectRepository)
+    public function boot(AcademicClassRepositoryInterface $classRepository)
     {
-        $this->subjectRepository = $subjectRepository;
+        $this->classRepository = $classRepository;
     }
 
     public function mount()
@@ -48,9 +48,9 @@ class SubjectIndex extends Component implements HasForms
     public function form(Form $form): Form
     {
         return $form
-            ->schema(SubjectForm::schema())
+            ->schema(ClassForm::schema())
             ->statePath('data')
-            ->model($this->record ?? Subject::class);
+            ->model($this->record ?? AcademicClass::class);
     }
 
     public function create()
@@ -61,11 +61,11 @@ class SubjectIndex extends Component implements HasForms
         $this->showModal = true;
     }
 
-    public function edit(Subject $subject)
+    public function edit(AcademicClass $class)
     {
-        $this->record = $subject;
+        $this->record = $class;
         $this->resetValidation();
-        $this->form->fill($subject->attributesToArray());
+        $this->form->fill($class->attributesToArray());
         $this->showModal = true;
     }
 
@@ -76,11 +76,11 @@ class SubjectIndex extends Component implements HasForms
 
         try {
             if ($this->record) {
-                $this->subjectRepository->update($this->record->id, $data);
-                $message = 'Subject updated successfully.';
+                $this->classRepository->update($this->record->id, $data);
+                $message = 'Class updated successfully.';
             } else {
-                $this->subjectRepository->create($data);
-                $message = 'Subject created successfully.';
+                $this->classRepository->create($data);
+                $message = 'Class created successfully.';
             }
 
             $this->dispatch('notify', text: $message, variant: 'success');
@@ -91,11 +91,11 @@ class SubjectIndex extends Component implements HasForms
         }
     }
 
-    public function delete(Subject $subject)
+    public function delete(AcademicClass $class)
     {
         try {
-            $this->subjectRepository->delete($subject->id);
-            $this->dispatch('notify', text: 'Subject deleted successfully.', variant: 'success');
+            $this->classRepository->delete($class->id);
+            $this->dispatch('notify', text: 'Class deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
             $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
         }
@@ -103,8 +103,15 @@ class SubjectIndex extends Component implements HasForms
 
     public function render()
     {
-        return view('livewire.academic.subject-index', [
-            'subjects' => $this->subjectRepository->search(['name', 'code'], $this->search, $this->perPage),
+        // Actually, $this->classRepository->search returns paginator
+        $query = clone $this->classRepository->query();
+        
+        if ($this->search) {
+            $query->where('name', 'like', "%{$this->search}%");
+        }
+        
+        return view('livewire.academic.class-index', [
+            'classes' => $query->with('room')->latest()->paginate($this->perPage),
         ]);
     }
 }

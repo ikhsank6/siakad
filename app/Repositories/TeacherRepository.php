@@ -14,6 +14,29 @@ class TeacherRepository extends BaseRepository implements TeacherRepositoryInter
         parent::__construct($model);
     }
 
+    public function create(array $data): \Illuminate\Database\Eloquent\Model
+    {
+        return DB::transaction(function () use ($data) {
+            $teacher = $this->model->create($data);
+            if (isset($data['subjects'])) {
+                $teacher->subjects()->sync($data['subjects']);
+            }
+            return $teacher;
+        });
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $teacher = $this->findOrFail($id);
+            $result = $teacher->update($data);
+            if (isset($data['subjects'])) {
+                $teacher->subjects()->sync($data['subjects']);
+            }
+            return $result;
+        });
+    }
+
     public function getConfigs(int $academicYearId)
     {
         return TeacherConfig::where('academic_year_id', $academicYearId)->get();

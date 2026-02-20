@@ -71,23 +71,34 @@ class StudentIndex extends Component implements HasForms
 
     public function save()
     {
+        // Validate form first - this will show errors under each field
         $data = $this->form->getState();
 
-        if ($this->record) {
-            $this->studentRepository->update($this->record->id, $data);
-        } else {
-            $this->studentRepository->create($data);
-        }
+        try {
+            if ($this->record) {
+                $this->studentRepository->update($this->record->id, $data);
+                $message = 'Student updated successfully.';
+            } else {
+                $this->studentRepository->create($data);
+                $message = 'Student created successfully.';
+            }
 
-        $this->dispatch('notify', text: 'Student saved successfully.', variant: 'success');
-        $this->showModal = false;
-        $this->dispatch('refresh');
+            $this->dispatch('notify', text: $message, variant: 'success');
+            $this->showModal = false;
+            $this->dispatch('refresh');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
+        }
     }
 
     public function delete(Student $student)
     {
-        $this->studentRepository->delete($student->id);
-        $this->dispatch('notify', text: 'Student deleted successfully.', variant: 'success');
+        try {
+            $this->studentRepository->delete($student->id);
+            $this->dispatch('notify', text: 'Student deleted successfully.', variant: 'success');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
+        }
     }
 
     public function render()

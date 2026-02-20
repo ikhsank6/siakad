@@ -57,4 +57,14 @@ interface RepositoryInterface
      * Search records by given criteria.
      */
     public function search(array $searchable, ?string $term = null, int $perPage = 10): LengthAwarePaginator;
+
+    /**
+     * Get the underlying model.
+     */
+    public function getModel(): Model;
+
+    /**
+     * Create a new query builder.
+     */
+    public function query();
 }

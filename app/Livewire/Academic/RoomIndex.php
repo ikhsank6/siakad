@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Academic;
 
-use App\Forms\SubjectForm;
+use App\Forms\RoomForm;
 use App\Livewire\Concerns\HasTableView;
-use App\Models\Subject;
-use App\Repositories\Contracts\SubjectRepositoryInterface;
+use App\Models\Room;
+use App\Repositories\Contracts\RoomRepositoryInterface;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -16,8 +16,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
-#[Title('Subjects')]
-class SubjectIndex extends Component implements HasForms
+#[Title('Rooms')]
+class RoomIndex extends Component implements HasForms
 {
     use HasTableView;
     use InteractsWithForms;
@@ -30,14 +30,14 @@ class SubjectIndex extends Component implements HasForms
     public $perPage = 10;
 
     public ?array $data = [];
-    public ?Subject $record = null;
+    public ?Room $record = null;
     public $showModal = false;
 
-    protected SubjectRepositoryInterface $subjectRepository;
+    protected RoomRepositoryInterface $roomRepository;
 
-    public function boot(SubjectRepositoryInterface $subjectRepository)
+    public function boot(RoomRepositoryInterface $roomRepository)
     {
-        $this->subjectRepository = $subjectRepository;
+        $this->roomRepository = $roomRepository;
     }
 
     public function mount()
@@ -48,9 +48,9 @@ class SubjectIndex extends Component implements HasForms
     public function form(Form $form): Form
     {
         return $form
-            ->schema(SubjectForm::schema())
+            ->schema(RoomForm::schema())
             ->statePath('data')
-            ->model($this->record ?? Subject::class);
+            ->model($this->record ?? Room::class);
     }
 
     public function create()
@@ -61,11 +61,11 @@ class SubjectIndex extends Component implements HasForms
         $this->showModal = true;
     }
 
-    public function edit(Subject $subject)
+    public function edit(Room $room)
     {
-        $this->record = $subject;
+        $this->record = $room;
         $this->resetValidation();
-        $this->form->fill($subject->attributesToArray());
+        $this->form->fill($room->attributesToArray());
         $this->showModal = true;
     }
 
@@ -76,11 +76,11 @@ class SubjectIndex extends Component implements HasForms
 
         try {
             if ($this->record) {
-                $this->subjectRepository->update($this->record->id, $data);
-                $message = 'Subject updated successfully.';
+                $this->roomRepository->update($this->record->id, $data);
+                $message = 'Room updated successfully.';
             } else {
-                $this->subjectRepository->create($data);
-                $message = 'Subject created successfully.';
+                $this->roomRepository->create($data);
+                $message = 'Room created successfully.';
             }
 
             $this->dispatch('notify', text: $message, variant: 'success');
@@ -91,11 +91,11 @@ class SubjectIndex extends Component implements HasForms
         }
     }
 
-    public function delete(Subject $subject)
+    public function delete(Room $room)
     {
         try {
-            $this->subjectRepository->delete($subject->id);
-            $this->dispatch('notify', text: 'Subject deleted successfully.', variant: 'success');
+            $this->roomRepository->delete($room->id);
+            $this->dispatch('notify', text: 'Room deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
             $this->dispatch('notify', text: 'Error: '.$e->getMessage(), variant: 'danger');
         }
@@ -103,8 +103,8 @@ class SubjectIndex extends Component implements HasForms
 
     public function render()
     {
-        return view('livewire.academic.subject-index', [
-            'subjects' => $this->subjectRepository->search(['name', 'code'], $this->search, $this->perPage),
+        return view('livewire.academic.room-index', [
+            'rooms' => $this->roomRepository->search(['name', 'type'], $this->search, $this->perPage),
         ]);
     }
 }

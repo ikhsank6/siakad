@@ -18,6 +18,7 @@
             <x-ui.table.thead>
                 <x-ui.table.th>NIP</x-ui.table.th>
                 <x-ui.table.th>Full Name</x-ui.table.th>
+                <x-ui.table.th>Subjects</x-ui.table.th>
                 <x-ui.table.th>Phone</x-ui.table.th>
                 <x-ui.table.th shrink></x-ui.table.th>
             </x-ui.table.thead>
@@ -32,6 +33,16 @@
                                 <span class="font-bold">{{ $teacher->name }}</span>
                             </div>
                         </x-ui.table.td>
+                        <x-ui.table.td>
+                            <div class="flex flex-wrap gap-1">
+                                @forelse($teacher->subjects as $subject)
+                                    <x-ui.badge variant="primary"
+                                        class="!text-[10px] !px-1.5 !py-0.5">{{ $subject->name }}</x-ui.badge>
+                                @empty
+                                    <span class="text-xs text-zinc-400">No subjects</span>
+                                @endforelse
+                            </div>
+                        </x-ui.table.td>
                         <x-ui.table.td>{{ $teacher->phone ?? '-' }}</x-ui.table.td>
                         <x-ui.table.td shrink>
                             <div class="flex items-center justify-end gap-2">
@@ -42,7 +53,7 @@
                     </x-ui.table.tr>
                 @empty
                     <x-ui.table.tr>
-                        <x-ui.table.td colspan="4"><x-ui.empty-state /></x-ui.table.td>
+                        <x-ui.table.td colspan="5"><x-ui.empty-state /></x-ui.table.td>
                     </x-ui.table.tr>
                 @endforelse
             </x-ui.table.tbody>
@@ -54,7 +65,7 @@
     </x-ui.card>
 
     <x-ui.modal wire:model="showModal" :title="$record ? 'Edit Teacher' : 'Create Teacher'" formId="teacher-form">
-        <form wire:submit="save" id="teacher-form">
+        <form wire:submit="save" id="teacher-form" novalidate>
             {{ $this->form }}
         </form>
     </x-ui.modal>

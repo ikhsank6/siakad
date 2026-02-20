@@ -29,6 +29,12 @@ class TeacherForm
                 ->label('Phone Number'),
             Textarea::make('address')
                 ->label('Address'),
+            Select::make('subjects')
+                ->relationship('subjects', 'name')
+                ->multiple()
+                ->preload()
+                ->searchable()
+                ->label('Taught Subjects'),
         ];
     }
 }

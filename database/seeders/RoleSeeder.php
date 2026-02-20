@@ -23,6 +23,16 @@ class RoleSeeder extends Seeder
                 'slug' => 'admin',
                 'description' => 'Administrative access with some restrictions',
             ],
+            [
+                'name' => 'Teacher',
+                'slug' => 'teacher',
+                'description' => 'Teacher access for academic features',
+            ],
+            [
+                'name' => 'Student',
+                'slug' => 'student',
+                'description' => 'Student access for learning and academic features',
+            ],
         ];
 
         foreach ($roles as $role) {

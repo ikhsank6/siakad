@@ -44,4 +44,9 @@ class Teacher extends Model
     {
         return $this->hasMany(Schedule::class);
     }
+
+    public function subjects(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'subject_teacher', 'teacher_id', 'subject_id')->withTimestamps();
+    }
 }

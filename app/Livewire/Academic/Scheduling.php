@@ -21,6 +21,7 @@ class Scheduling extends Component
     public $globalMinHours = 18;
     public $globalMaxHours = 24;
     public $activeTab = 'config'; // config, simulate, publish
+    public $useDynamicRooms = false;
 
     public $showOverrideModal = false;
     public $editingTeacherId = null;
@@ -84,7 +85,7 @@ class Scheduling extends Component
     public function generateSchedule()
     {
         $year = AcademicYear::find($this->activeYearId);
-        $engine = new SchedulingEngine($year, $this->scheduleRepository);
+        $engine = new SchedulingEngine($year, $this->scheduleRepository, $this->useDynamicRooms);
         $count = $engine->generate();
 
         $this->dispatch('notify', text: "Successfully generated $count schedule slots in draft.", variant: 'success');
