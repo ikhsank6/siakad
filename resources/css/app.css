@@ -1,0 +1,1090 @@
+@import "tailwindcss";
+@import "../../vendor/livewire/flux/dist/flux.css";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
+@source '../../vendor/filament/**/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+
+    /* Flux UI Customizations */
+    --color-zinc-950: #1b1c22;
+    --color-zinc-900: #1e1e2d;
+    --color-zinc-800: #2d2d3a;
+
+    /* Metronic Color Variables */
+    --color-metronic-light-bg: #f9f9f9;
+    --color-metronic-light-sidebar: #ffffff;
+    --color-metronic-light-card: #ffffff;
+    --color-metronic-light-border: #e8e8e8;
+    --color-metronic-light-text: #1b1c22;
+    --color-metronic-light-text-muted: #99a1b7;
+
+    --color-metronic-dark-bg: #1b1c22;
+    --color-metronic-dark-sidebar: #1e1e2d;
+    --color-metronic-dark-card: #1e1e2d;
+    --color-metronic-dark-card-hover: #252532;
+    --color-metronic-dark-border: #2d2d3a;
+    --color-metronic-dark-text: #ffffff;
+    --color-metronic-dark-text-muted: #a1a5b7;
+
+    --color-metronic-primary: #1b84ff;
+    --color-metronic-success: #17c653;
+    --color-metronic-danger: #f8285a;
+    --color-metronic-warning: #f6b100;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* ============================================
+   LIGHT MODE - Metronic Clean White Theme
+   ============================================ */
+
+/* Light Mode - Root backgrounds */
+body,
+html {
+    background-color: #f9f9f9;
+    color: #1b1c22;
+}
+
+/* Light Mode - Sidebar */
+aside,
+[data-flux-sidebar] {
+    background-color: #ffffff;
+    border-right: 1px solid #e8e8e8;
+    box-shadow: none;
+}
+
+/* Light Mode - Sidebar text colors */
+aside a,
+aside span,
+aside div:not([data-flux-navlist-item]),
+aside svg,
+[data-flux-sidebar] a,
+[data-flux-sidebar] span,
+[data-flux-sidebar] svg {
+    color: #4b5675;
+}
+
+/* Light Mode - Active navigation item */
+aside [aria-current="page"],
+[data-flux-sidebar] [aria-current="page"] {
+    background-color: #f1f1f4;
+    border-radius: 0.5rem;
+}
+
+aside [aria-current="page"] *,
+[data-flux-sidebar] [aria-current="page"] * {
+    color: #1b84ff;
+    font-weight: 600;
+}
+
+/* Light Mode - Hover effects */
+aside a:hover,
+[data-flux-sidebar] a:hover {
+    background-color: #f1f1f4;
+    color: #1b84ff;
+}
+
+/* Light Mode - Sidebar Headings */
+aside [data-flux-heading],
+[data-flux-sidebar] [data-flux-heading],
+aside h2 {
+    color: #99a1b7;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+}
+
+/* Light Mode - Cards */
+.premium-table-container,
+.metronic-card {
+    background-color: #ffffff !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Light Mode - Input fields */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+    background-color: #f9f9f9 !important;
+    border: 1px solid #e8e8e8 !important;
+    color: #1b1c22 !important;
+    border-radius: 0.5rem !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+    border-color: #1b84ff !important;
+    box-shadow: 0 0 0 3px rgba(27, 132, 255, 0.1) !important;
+    outline: none !important;
+}
+
+/* Light Mode - Buttons */
+button:not(.btn-primary):not(.bg-indigo-600):not(.bg-red-600):not(
+        .bg-green-600
+    ):not(.bg-blue-600):not(.bg-blue-700):not(.cancel-btn) {
+    background-color: #f1f1f4 !important;
+    color: #4b5675 !important;
+    border: none !important;
+}
+
+button:not(.btn-primary):not(.bg-indigo-600):not(.bg-red-600):not(
+        .bg-green-600
+    ):not(.bg-blue-600):not(.bg-blue-700):not(.cancel-btn):hover {
+    background-color: #e8e8e8 !important;
+    color: #1b1c22 !important;
+}
+
+/* ============================================
+   DARK MODE - Metronic Deep Dark Theme
+   ============================================ */
+
+/* Dark Mode - Root backgrounds */
+.dark body,
+.dark html {
+    background-color: #1b1c22;
+    color: #ffffff;
+}
+
+/* Dark Mode - Sidebar */
+.dark aside,
+.dark [data-flux-sidebar] {
+    background-color: #1e1e2d;
+    border-right: 1px solid #2d2d3a;
+    box-shadow: none;
+}
+
+/* Dark Mode - Sidebar text */
+.dark aside a,
+.dark aside button,
+.dark aside span,
+.dark aside div,
+.dark aside svg,
+.dark [data-flux-sidebar] a,
+.dark [data-flux-sidebar] button,
+.dark [data-flux-sidebar] span,
+.dark [data-flux-sidebar] svg,
+.dark [data-flux-sidebar] [data-flux-navlist-item],
+.dark [data-flux-sidebar] [data-flux-heading],
+.dark [data-flux-sidebar] [data-flux-brand] {
+    color: #ffffff !important;
+}
+
+/* Dark Mode - Active navigation item */
+.dark aside [aria-current="page"],
+.dark [data-flux-sidebar] [aria-current="page"] {
+    background-color: #252532;
+    border-radius: 0.5rem;
+}
+
+.dark aside [aria-current="page"] *,
+.dark [data-flux-sidebar] [aria-current="page"] * {
+    color: #1b84ff;
+    font-weight: 600;
+}
+
+/* Dark Mode - Hover effects */
+.dark aside a:hover:not([aria-current="page"]),
+.dark [data-flux-sidebar] a:hover:not([aria-current="page"]),
+.dark [data-flux-sidebar] button:hover,
+.dark [data-flux-sidebar] [data-flux-navlist-item]:hover,
+.dark [data-flux-sidebar] a:hover *,
+.dark [data-flux-sidebar] button:hover * {
+    background-color: #252532;
+    color: #1b84ff !important;
+}
+
+/* Dark Mode - Sidebar Headings */
+.dark aside [data-flux-heading],
+.dark [data-flux-sidebar] [data-flux-heading],
+.dark aside h2 {
+    color: #ffffff !important;
+    opacity: 0.9;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+/* Dark Mode - Cards */
+.dark .premium-table-container,
+.dark .metronic-card {
+    background-color: #1e1e2d !important;
+    border: 1px solid #2d2d3a !important;
+    border-radius: 0.75rem !important;
+    box-shadow: none !important;
+}
+
+/* Dark Mode - Input fields */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+    background-color: #1b1c22 !important;
+    border: 1px solid #2d2d3a !important;
+    color: #ffffff !important;
+    border-radius: 0.5rem !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark select:focus,
+.dark textarea:focus {
+    border-color: #1b84ff !important;
+    box-shadow: 0 0 0 3px rgba(27, 132, 255, 0.15) !important;
+    outline: none !important;
+}
+
+/* Dark Mode - Buttons */
+.dark
+    button:not(.btn-primary):not(.bg-indigo-600):not(.bg-red-600):not(
+        .bg-green-600
+    ):not(.bg-blue-600):not(.bg-blue-700):not(.cancel-btn) {
+    background-color: #252532 !important;
+    color: #6d6d80 !important;
+    border: none !important;
+}
+
+.dark
+    button:not(.btn-primary):not(.bg-indigo-600):not(.bg-red-600):not(
+        .bg-green-600
+    ):hover {
+    background-color: #2d2d3a !important;
+    color: #ffffff !important;
+}
+
+/* ============================================
+   METRONIC COMPONENT STYLES
+   ============================================ */
+
+/* Primary Button */
+.btn-primary {
+    background-color: #1b84ff !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #0070f0 !important;
+    box-shadow: 0 4px 12px rgba(27, 132, 255, 0.35);
+}
+
+/* Success badge */
+.badge-success {
+    background-color: rgba(23, 198, 83, 0.15) !important;
+    color: #17c653 !important;
+}
+
+/* Danger badge */
+.badge-danger {
+    background-color: rgba(248, 40, 90, 0.15) !important;
+    color: #f8285a !important;
+}
+
+/* Warning badge */
+.badge-warning {
+    background-color: rgba(246, 177, 0, 0.15) !important;
+    color: #f6b100 !important;
+}
+
+/* Neutral badge */
+.badge-neutral {
+    background-color: #f1f1f4 !important;
+    color: #4b5675 !important;
+}
+
+.dark .badge-neutral {
+    background-color: #252532 !important;
+    color: #6d6d80 !important;
+}
+
+/* ============================================
+   TABLE STYLES (Metronic-like)
+   ============================================ */
+
+/* Light Mode Tables */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+thead {
+    background-color: #f9f9f9 !important;
+}
+
+thead th {
+    color: #99a1b7 !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 1px solid #e8e8e8 !important;
+}
+
+tbody tr {
+    border-bottom: 1px solid #e8e8e8;
+}
+
+tbody tr:hover {
+    background-color: #f9f9f9 !important;
+}
+
+tbody td {
+    color: #4b5675 !important;
+    padding: 1rem !important;
+}
+
+/* Dark Mode Tables */
+.dark thead {
+    background-color: #1e1e2d !important;
+}
+
+.dark thead th {
+    color: #6d6d80 !important;
+    border-bottom: 1px solid #2d2d3a !important;
+}
+
+.dark tbody tr {
+    border-bottom: 1px solid #2d2d3a;
+}
+
+.dark tbody tr:hover {
+    background-color: #252532 !important;
+}
+
+.dark tbody td {
+    color: #a1a5b7 !important;
+}
+
+/* ============================================
+   DROPDOWN / MENU STYLES
+   ============================================ */
+
+[data-flux-menu] {
+    background-color: #ffffff !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    padding: 0.5rem !important;
+}
+
+.dark [data-flux-menu] {
+    background-color: #1e1e2d !important;
+    border: 1px solid #2d2d3a !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-flux-menu] [data-flux-menu-item] {
+    border-radius: 0.375rem !important;
+    padding: 0.625rem 0.875rem !important;
+    color: #4b5675 !important;
+}
+
+[data-flux-menu] [data-flux-menu-item]:hover {
+    background-color: #f1f1f4 !important;
+    color: #1b84ff !important;
+}
+
+.dark [data-flux-menu] [data-flux-menu-item] {
+    color: #6d6d80 !important;
+}
+
+.dark [data-flux-menu] [data-flux-menu-item]:hover {
+    background-color: #252532 !important;
+    color: #ffffff !important;
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+
+[data-flux-modal] {
+    background-color: #ffffff !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark [data-flux-modal] {
+    background-color: #1e1e2d !important;
+    border: 1px solid #2d2d3a !important;
+}
+
+/* ============================================
+   CARD HEADER STYLES
+   ============================================ */
+
+[data-flux-card] > div:first-child {
+    border-bottom: 1px solid #e8e8e8 !important;
+}
+
+.dark [data-flux-card] > div:first-child {
+    border-bottom: 1px solid #2d2d3a !important;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #f9f9f9;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #d8d8e5;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #c5c5d5;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background-color: #1b1c22;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background-color: #2d2d3a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #3d3d4a;
+}
+
+/* ============================================
+   SMOOTH TRANSITIONS
+   ============================================ */
+
+body,
+main,
+aside,
+button,
+input,
+select,
+textarea,
+a,
+[data-flux-menu] {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out,
+        border-color 0.2s ease-in-out !important;
+}
+
+/* ============================================
+   STAT CARD ICON STYLES
+   ============================================ */
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon.linkedin {
+    background-color: #0077b5;
+}
+
+.stat-icon.youtube {
+    background-color: #ff0000;
+}
+
+.stat-icon.instagram {
+    background: linear-gradient(
+        45deg,
+        #f09433,
+        #e6683c,
+        #dc2743,
+        #cc2366,
+        #bc1888
+    );
+}
+
+.stat-icon.tiktok {
+    background-color: #010101;
+}
+
+/* ============================================
+   SEPARATOR / DIVIDER
+   ============================================ */
+
+.metronic-separator {
+    height: 1px;
+    background-color: #e8e8e8;
+    margin: 0.5rem 0;
+}
+
+.dark .metronic-separator {
+    background-color: #2d2d3a;
+}
+
+/* ============================================
+   BADGE "SOON" STYLE
+   ============================================ */
+
+.badge-soon {
+    background-color: #f1f1f4;
+    color: #99a1b7;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+}
+
+.dark .badge-soon {
+    background-color: #252532;
+    color: #6d6d80;
+}
+
+/* ============================================
+   PROFILE DROPDOWN STYLES (Like Metronic)
+   ============================================ */
+
+.profile-dropdown-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.dark .profile-dropdown-header {
+    border-bottom: 1px solid #2d2d3a;
+}
+
+.profile-dropdown-header .name {
+    font-weight: 600;
+    color: #1b1c22;
+}
+
+.dark .profile-dropdown-header .name {
+    color: #ffffff;
+}
+
+.profile-dropdown-header .email {
+    font-size: 0.75rem;
+    color: #99a1b7;
+}
+
+.dark .profile-dropdown-header .email {
+    color: #6d6d80;
+}
+
+/* Pro badge */
+.badge-pro {
+    background-color: #17c653;
+    color: #ffffff;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+}
+
+/* ============================================
+   FILAMENT TOGGLE BUTTONS - FIX
+   ============================================ */
+
+/* Define CSS variables needed by Filament */
+:root {
+    --success-400: 74, 222, 128;
+    --success-500: 34, 197, 94;
+    --success-600: 22, 163, 74;
+    --danger-400: 248, 113, 113;
+    --danger-500: 239, 68, 68;
+    --danger-600: 220, 38, 38;
+    --primary-400: 96, 165, 250;
+    --primary-500: 59, 130, 246;
+    --primary-600: 37, 99, 235;
+}
+
+/* Premium Toggle Group Container */
+.premium-toggle-group .fi-fo-toggle-buttons {
+    display: flex !important;
+    gap: 0.75rem !important;
+}
+
+/* Base toggle button styles - override any accidental global button styles */
+.premium-toggle-group label.fi-btn,
+.fi-fo-toggle-buttons label.fi-btn {
+    position: relative !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    transition: all 0.2s ease !important;
+    border: 2px solid transparent !important;
+}
+
+/* ===== UNSELECTED STATE (default) ===== */
+
+/* Light mode - unselected */
+.premium-toggle-group label.fi-btn,
+.fi-fo-toggle-buttons label.fi-btn {
+    background-color: #f4f4f5 !important;
+    color: #71717a !important;
+    border-color: #e4e4e7 !important;
+}
+
+/* Dark mode - unselected */
+.dark .premium-toggle-group label.fi-btn,
+.dark .fi-fo-toggle-buttons label.fi-btn {
+    background-color: #27272a !important;
+    color: #a1a1aa !important;
+    border-color: #3f3f46 !important;
+}
+
+/* ===== SELECTED STATE - Using :checked + adjacent sibling ===== */
+
+/* Success (Visible) - Selected - Light & Dark */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn-color-success,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn-color-success {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Danger (Hidden) - Selected - Light & Dark */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn-color-danger,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn-color-danger {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 4px 14px -3px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Primary - Selected (for other toggle buttons) */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn-color-primary,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn-color-primary {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 14px -3px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Generic checked state (fallback for any color) */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 4px 14px -3px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Force icon/svg white color when selected */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn svg,
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn span,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn svg,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn span {
+    color: #ffffff !important;
+}
+
+/* ===== HOVER STATES ===== */
+
+/* Unselected hover - light mode */
+.premium-toggle-group input[type="radio"]:not(:checked) + label.fi-btn:hover,
+.fi-fo-toggle-buttons input[type="radio"]:not(:checked) + label.fi-btn:hover {
+    background-color: #e4e4e7 !important;
+    border-color: #d4d4d8 !important;
+    color: #52525b !important;
+}
+
+/* Unselected hover - dark mode */
+.dark
+    .premium-toggle-group
+    input[type="radio"]:not(:checked)
+    + label.fi-btn:hover,
+.dark
+    .fi-fo-toggle-buttons
+    input[type="radio"]:not(:checked)
+    + label.fi-btn:hover {
+    background-color: #3f3f46 !important;
+    border-color: #52525b !important;
+    color: #d4d4d8 !important;
+}
+
+/* Selected hover - intensify */
+.premium-toggle-group input[type="radio"]:checked + label.fi-btn:hover,
+.fi-fo-toggle-buttons input[type="radio"]:checked + label.fi-btn:hover {
+    filter: brightness(1.1) !important;
+}
+
+/* Icon sizing */
+.premium-toggle-group label.fi-btn svg,
+.fi-fo-toggle-buttons label.fi-btn svg {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+}
+
+/* Fix for Filament's internal bg-white override */
+.premium-toggle-group label.fi-btn.bg-white,
+.fi-fo-toggle-buttons label.fi-btn.bg-white {
+    background-color: #f4f4f5 !important;
+}
+
+.dark .premium-toggle-group label.fi-btn.bg-white,
+.dark .fi-fo-toggle-buttons label.fi-btn.bg-white {
+    background-color: #27272a !important;
+}
+
+/* Override Filament's custom color variables with solid colors */
+.premium-toggle-group
+    input[type="radio"]:checked
+    + label[style*="--c-500:var(--success"],
+.fi-fo-toggle-buttons
+    input[type="radio"]:checked
+    + label[style*="--c-500:var(--success"] {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+}
+
+.premium-toggle-group
+    input[type="radio"]:checked
+    + label[style*="--c-500:var(--danger"],
+.fi-fo-toggle-buttons
+    input[type="radio"]:checked
+    + label[style*="--c-500:var(--danger"] {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #dc2626 !important;
+}
+
+/* ============================================
+   NOTIFICATION TOAST - MODERN MONOCHROMATIC
+   ============================================ */
+
+@keyframes shrink-width {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+.animate-shrink-width {
+    animation: shrink-width linear forwards;
+}
+
+/* ===== TOAST BASE CONTAINER ===== */
+.toast-container {
+    backdrop-filter: blur(10px);
+}
+
+/* ============================================
+   LIGHT MODE - Soft pastel backgrounds
+   ============================================ */
+
+/* ===== SUCCESS TOAST - Green ===== */
+.toast-success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1.5px solid #6ee7b7;
+    box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.3);
+}
+
+.toast-success .toast-title {
+    color: #065f46;
+}
+
+.toast-success .toast-message {
+    color: #047857;
+}
+
+.toast-success .toast-icon-wrapper {
+    color: #10b981;
+}
+
+.toast-success .toast-close-btn {
+    color: #065f46;
+}
+
+.toast-success .toast-progress-bg {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.toast-success .toast-progress-bar {
+    background: #10b981;
+}
+
+/* ===== DANGER TOAST - Red/Pink ===== */
+.toast-danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+    border: 1.5px solid #fca5a5;
+    box-shadow: 0 10px 40px -10px rgba(239, 68, 68, 0.3);
+}
+
+.toast-danger .toast-title {
+    color: #991b1b;
+}
+
+.toast-danger .toast-message {
+    color: #b91c1c;
+}
+
+.toast-danger .toast-icon-wrapper {
+    color: #ef4444;
+}
+
+.toast-danger .toast-close-btn {
+    color: #991b1b;
+}
+
+.toast-danger .toast-progress-bg {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.toast-danger .toast-progress-bar {
+    background: #ef4444;
+}
+
+/* ===== WARNING TOAST - Orange/Amber ===== */
+.toast-warning {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1.5px solid #fcd34d;
+    box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.3);
+}
+
+.toast-warning .toast-title {
+    color: #92400e;
+}
+
+.toast-warning .toast-message {
+    color: #b45309;
+}
+
+.toast-warning .toast-icon-wrapper {
+    color: #f59e0b;
+}
+
+.toast-warning .toast-close-btn {
+    color: #92400e;
+}
+
+.toast-warning .toast-progress-bg {
+    background: rgba(245, 158, 11, 0.2);
+}
+
+.toast-warning .toast-progress-bar {
+    background: #f59e0b;
+}
+
+/* ===== INFO TOAST - Blue ===== */
+.toast-info {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1.5px solid #93c5fd;
+    box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.3);
+}
+
+.toast-info .toast-title {
+    color: #1e40af;
+}
+
+.toast-info .toast-message {
+    color: #1d4ed8;
+}
+
+.toast-info .toast-icon-wrapper {
+    color: #3b82f6;
+}
+
+.toast-info .toast-close-btn {
+    color: #1e40af;
+}
+
+.toast-info .toast-progress-bg {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.toast-info .toast-progress-bar {
+    background: #3b82f6;
+}
+
+/* ============================================
+   DARK MODE - Rich saturated backgrounds
+   ============================================ */
+
+/* ===== SUCCESS TOAST - Dark Green ===== */
+.dark .toast-success {
+    background: linear-gradient(135deg, #065f46 0%, #064e3b 100%);
+    border: 1.5px solid #10b981;
+    box-shadow: 0 20px 50px -15px rgba(16, 185, 129, 0.4);
+}
+
+.dark .toast-success .toast-title {
+    color: #6ee7b7;
+}
+
+.dark .toast-success .toast-message {
+    color: #a7f3d0;
+}
+
+.dark .toast-success .toast-icon-wrapper {
+    color: #34d399;
+}
+
+.dark .toast-success .toast-close-btn {
+    color: #6ee7b7;
+}
+
+.dark .toast-success .toast-progress-bg {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+/* ===== DANGER TOAST - Dark Red/Pink ===== */
+.dark .toast-danger {
+    background: linear-gradient(135deg, #881337 0%, #6b0f26 100%);
+    border: 1.5px solid #fb7185;
+    box-shadow: 0 20px 50px -15px rgba(244, 63, 94, 0.4);
+}
+
+.dark .toast-danger .toast-title {
+    color: #fda4af;
+}
+
+.dark .toast-danger .toast-message {
+    color: #fecdd3;
+}
+
+.dark .toast-danger .toast-icon-wrapper {
+    color: #fb7185;
+}
+
+.dark .toast-danger .toast-close-btn {
+    color: #fda4af;
+}
+
+.dark .toast-danger .toast-progress-bg {
+    background: rgba(244, 63, 94, 0.3);
+}
+
+/* ===== WARNING TOAST - Dark Orange/Amber ===== */
+.dark .toast-warning {
+    background: linear-gradient(135deg, #78350f 0%, #5c2c0a 100%);
+    border: 1.5px solid #f59e0b;
+    box-shadow: 0 20px 50px -15px rgba(245, 158, 11, 0.4);
+}
+
+.dark .toast-warning .toast-title {
+    color: #fcd34d;
+}
+
+.dark .toast-warning .toast-message {
+    color: #fde68a;
+}
+
+.dark .toast-warning .toast-icon-wrapper {
+    color: #fbbf24;
+}
+
+.dark .toast-warning .toast-close-btn {
+    color: #fcd34d;
+}
+
+.dark .toast-warning .toast-progress-bg {
+    background: rgba(245, 158, 11, 0.3);
+}
+
+/* ===== INFO TOAST - Dark Blue ===== */
+.dark .toast-info {
+    background: linear-gradient(135deg, #1e3a5f 0%, #172554 100%);
+    border: 1.5px solid #3b82f6;
+    box-shadow: 0 20px 50px -15px rgba(59, 130, 246, 0.4);
+}
+
+.dark .toast-info .toast-title {
+    color: #93c5fd;
+}
+
+.dark .toast-info .toast-message {
+    color: #bfdbfe;
+}
+
+.dark .toast-info .toast-icon-wrapper {
+    color: #60a5fa;
+}
+
+.dark .toast-info .toast-close-btn {
+    color: #93c5fd;
+}
+
+.dark .toast-info .toast-progress-bg {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================
+   FILAMENT FORMS - RED REQUIRED INDICATOR
+   ============================================ */
+
+/* Make the required asterisk (*) red */
+.fi-fo-field-wrp .fi-fo-field-wrp-label sup,
+.fi-fo-field-wrp label sup,
+.fi-fo-field-wrp-label sup,
+.custom-modal-body sup {
+    color: #f8285a !important;
+    font-weight: 700 !important;
+}
+
+/* Also target the asterisk directly if it's rendered differently */
+.fi-fo-field-wrp .fi-fo-field-wrp-label span.text-danger-600,
+.fi-fo-field-wrp-label span[class*="text-danger"] {
+    color: #f8285a !important;
+}
+
+/* ============================================
+   FILAMENT FORMS - RED VALIDATION ERRORS
+   ============================================ */
+
+/* Make validation error messages RED */
+.fi-fo-field-wrp-error-message,
+.fi-fo-field-wrp p[class*="text-danger"],
+.fi-fo-field-wrp .text-danger-600,
+.custom-modal-body .fi-fo-field-wrp-error-message,
+[data-validation-error],
+p.fi-fo-field-wrp-error-message {
+    color: #f8285a !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    margin-top: 0.375rem !important;
+}
+
+/* Add red border to inputs with errors */
+.fi-fo-field-wrp-error input,
+.fi-fo-field-wrp-error select,
+.fi-fo-field-wrp-error textarea,
+.fi-fo-field-wrp:has(.fi-fo-field-wrp-error-message) input,
+.fi-fo-field-wrp:has(.fi-fo-field-wrp-error-message) select,
+.fi-fo-field-wrp:has(.fi-fo-field-wrp-error-message) textarea {
+    border-color: #f8285a !important;
+    box-shadow: 0 0 0 1px rgba(248, 40, 90, 0.2) !important;
+}
+
+/* Ensure error messages in dark mode are visible */
+.dark .fi-fo-field-wrp-error-message,
+.dark .fi-fo-field-wrp p[class*="text-danger"],
+.dark .fi-fo-field-wrp .text-danger-600 {
+    color: #ff6b8a !important;
+}
