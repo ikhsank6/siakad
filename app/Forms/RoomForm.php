@@ -29,6 +29,7 @@ class RoomForm
                 ])
                 ->default('General')
                 ->required()
+                ->searchable()
                 ->label('Room Type'),
         ];
     }

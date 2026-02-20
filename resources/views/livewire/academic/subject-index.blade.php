@@ -42,6 +42,46 @@
                 @endforelse
             </x-ui.table.tbody>
 
+            <x-slot name="board">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @forelse($subjects as $subject)
+                        <div
+                            class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md transition-all group">
+                            <div class="flex items-start justify-between mb-4 gap-2">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 shrink-0">
+                                        <flux:icon.book-open class="w-6 h-6" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h3 class="font-bold text-zinc-900 dark:text-white truncate"
+                                            title="{{ $subject->name }}">{{ $subject->name }}</h3>
+                                        <p class="text-[10px] text-zinc-500 truncate">
+                                            Code: {{ $subject->code }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-3 mb-5">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-zinc-500">Beban Mengajar</span>
+                                    <span
+                                        class="text-zinc-700 dark:text-zinc-300 font-medium">{{ $subject->default_hours_per_week }}
+                                        Jam/Minggu</span>
+                                </div>
+                            </div>
+                            <div
+                                class="flex items-center justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                <x-ui.button.edit :uuid="$subject->uuid" />
+                                <x-ui.button.delete :uuid="$subject->uuid" :name="$subject->name" />
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-span-full">
+                            <x-ui.empty-state />
+                        </div>
+                    @endforelse
+                </div>
+            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

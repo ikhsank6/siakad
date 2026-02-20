@@ -157,11 +157,19 @@ class MenuSeeder extends Seeder
                         'is_active' => true,
                     ],
                     [
+                        'name' => 'Academic Years',
+                        'slug' => 'academic-years',
+                        'icon' => 'calendar',
+                        'route' => 'academic.academic-years.index',
+                        'order' => 2,
+                        'is_active' => true,
+                    ],
+                    [
                         'name' => 'Subjects',
                         'slug' => 'subjects',
                         'icon' => 'book-open',
                         'route' => 'academic.subjects.index',
-                        'order' => 2,
+                        'order' => 3,
                         'is_active' => true,
                     ],
                     [
@@ -169,7 +177,7 @@ class MenuSeeder extends Seeder
                         'slug' => 'teachers',
                         'icon' => 'user-group',
                         'route' => 'academic.teachers.index',
-                        'order' => 3,
+                        'order' => 4,
                         'is_active' => true,
                     ],
                     [
@@ -177,7 +185,7 @@ class MenuSeeder extends Seeder
                         'slug' => 'students',
                         'icon' => 'users',
                         'route' => 'academic.students.index',
-                        'order' => 4,
+                        'order' => 5,
                         'is_active' => true,
                     ],
                     [
@@ -185,7 +193,7 @@ class MenuSeeder extends Seeder
                         'slug' => 'rooms',
                         'icon' => 'building-library',
                         'route' => 'academic.rooms.index',
-                        'order' => 5,
+                        'order' => 6,
                         'is_active' => true,
                     ],
                     [
@@ -193,7 +201,7 @@ class MenuSeeder extends Seeder
                         'slug' => 'classes',
                         'icon' => 'rectangle-group',
                         'route' => 'academic.classes.index',
-                        'order' => 6,
+                        'order' => 7,
                         'is_active' => true,
                     ],
                 ],
