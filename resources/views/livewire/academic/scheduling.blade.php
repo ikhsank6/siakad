@@ -127,45 +127,48 @@
                                     <tr>
                                         <th class="px-4 py-3 min-w-[120px] border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 sticky left-0 z-20">Time</th>
                                         @foreach($days as $dayNum => $dayName)
-                                            <th class="px-4 py-3 min-w-[200px] border-b border-l border-zinc-200 dark:border-zinc-700">{{ $dayName }}</th>
+                                            <th class="px-4 py-3 min-w-[220px] border-b border-l border-zinc-200 dark:border-zinc-700">{{ $dayName }}</th>
                                         @endforeach
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                                    @foreach($timeSlots as $slot)
+                                    @foreach($timeSlots as $timeKey => $slotsInGroup)
+                                        @php
+                                            $firstSlotData = $calendarData[1][$timeKey] ?? null;
+                                        @endphp
                                         <tr>
                                             <td class="px-4 py-3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky left-0 shadow-[2px_0_5px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-10">
-                                                <div class="font-medium text-zinc-900 dark:text-white">{{ substr($slot->start_time, 0, 5) }}</div>
-                                                <div class="text-[10px] text-zinc-500">{{ substr($slot->end_time, 0, 5) }}</div>
+                                                <div class="font-medium text-zinc-900 dark:text-white">{{ substr($firstSlotData['start_time'] ?? '', 0, 5) }}</div>
+                                                <div class="text-[10px] text-zinc-500">{{ substr($firstSlotData['end_time'] ?? '', 0, 5) }}</div>
                                             </td>
                                             
                                             @foreach($days as $dayNum => $dayName)
-                                                <td class="px-4 py-3 h-24 align-top w-[200px] border-l border-zinc-200 dark:border-zinc-800 relative bg-zinc-50/30 dark:bg-zinc-800/20">
-                                                    @if($slot->is_break)
+                                                @php
+                                                    $cellData = $calendarData[$dayNum][$timeKey] ?? ['items' => collect(), 'is_break' => false, 'name' => ''];
+                                                    $items = $cellData['items'];
+                                                @endphp
+                                                <td class="px-4 py-3 h-24 align-top w-[220px] border-l border-zinc-200 dark:border-zinc-800 relative bg-zinc-50/30 dark:bg-zinc-800/20">
+                                                    @if($cellData['is_break'])
                                                         <div class="absolute inset-0 flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-800/80">
-                                                            <span class="text-zinc-400 font-bold uppercase tracking-widest opacity-50">{{ $slot->name }}</span>
+                                                            <span class="text-zinc-400 font-bold uppercase tracking-widest opacity-50">{{ $cellData['name'] }}</span>
                                                         </div>
                                                     @else
-                                                        @php
-                                                            $items = $calendarData[$dayNum][$slot->id] ?? collect();
-                                                        @endphp
-                                                        
-                                                        <div class="flex flex-col gap-2">
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[450px]">
                                                             @foreach($items as $item)
                                                                 <div class="p-2 rounded-md border text-left
                                                                     {{ $previewFilterClass ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800/50' : 'bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700' }} shadow-sm">
                                                                     
-                                                                    <div class="font-bold text-zinc-800 dark:text-zinc-200 truncate" title="{{ $item->subject->name }}">
+                                                                    <div class="font-bold text-zinc-800 dark:text-zinc-200 truncate text-[11px]" title="{{ $item->subject->name }}">
                                                                         {{ $item->subject->name }}
                                                                     </div>
                                                                     
-                                                                    <div class="mt-1 flex items-center justify-between gap-1 text-[10px] text-zinc-500">
+                                                                    <div class="mt-1 flex items-center justify-between gap-1 text-[9px] text-zinc-500">
                                                                         <span class="font-medium truncate" title="{{ $item->teacher->name }}">{{ $item->teacher->name }}</span>
                                                                     </div>
-
-                                                                    <div class="mt-1 flex items-center justify-between gap-1">
-                                                                        <x-ui.badge variant="success" class="!px-1 !py-0 !text-[9px]">{{ $item->room->name }}</x-ui.badge>
-                                                                        <x-ui.badge variant="primary" class="!px-1 !py-0 !text-[9px]">{{ $item->academicClass->name }}</x-ui.badge>
+ 
+                                                                    <div class="mt-1 flex items-center gap-1">
+                                                                        <x-ui.badge variant="success" class="!px-1 !py-0 text-[8px]! truncate max-w-[50%]">{{ $item->room->name }}</x-ui.badge>
+                                                                        <x-ui.badge variant="primary" class="!px-1 !py-0 text-[8px]! truncate max-w-[50%]">{{ $item->academicClass->name }}</x-ui.badge>
                                                                     </div>
                                                                 </div>
                                                             @endforeach

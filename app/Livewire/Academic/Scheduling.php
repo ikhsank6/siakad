@@ -146,13 +146,25 @@ class Scheduling extends Component
             }
 
             $drafts = $query->orderBy('day')->orderBy('time_slot_id')->get();
-            $timeSlots = \App\Models\TimeSlot::orderBy('start_time')->get();
+            $allTimeSlots = \App\Models\TimeSlot::orderBy('start_time')->get();
+            
+            // Group time slots by time range
+            $timeSlots = $allTimeSlots->groupBy(function($slot) {
+                return substr($slot->start_time, 0, 5) . '-' . substr($slot->end_time, 0, 5);
+            });
 
-            // Structure data for calendar view: $calendarData[day][time_slot_id] = [schedules...]
+            // Structure data: $calendarData[day][time_key] = [schedules...]
             foreach ($days as $dayNum => $dayName) {
                 $calendarData[$dayNum] = [];
-                foreach ($timeSlots as $slot) {
-                    $calendarData[$dayNum][$slot->id] = $drafts->where('day', $dayNum)->where('time_slot_id', $slot->id);
+                foreach ($timeSlots as $timeKey => $slotsInGroup) {
+                    $slotIds = $slotsInGroup->pluck('id')->toArray();
+                    $calendarData[$dayNum][$timeKey] = [
+                        'items' => $drafts->where('day', $dayNum)->whereIn('time_slot_id', $slotIds),
+                        'is_break' => $slotsInGroup->first()->is_break,
+                        'name' => $slotsInGroup->first()->name,
+                        'start_time' => $slotsInGroup->first()->start_time,
+                        'end_time' => $slotsInGroup->first()->end_time,
+                    ];
                 }
             }
         }
