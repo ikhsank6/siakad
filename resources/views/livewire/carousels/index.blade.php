@@ -106,9 +106,9 @@
                                     x-on:drop="handleDrop($event, {{ $carousel->id }})"
                                     class="bg-white dark:bg-zinc-900 transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 font-medium"
                                     :class="{ 
-                                                    'opacity-25 scale-[0.98]': dragging == {{ $carousel->id }}, 
-                                                    'bg-metronic-primary/5 dark:bg-metronic-primary/10 ring-2 ring-inset ring-metronic-primary/30': dragOver == {{ $carousel->id }} 
-                                                }">
+                                                        'opacity-25 scale-[0.98]': dragging == {{ $carousel->id }}, 
+                                                        'bg-metronic-primary/5 dark:bg-metronic-primary/10 ring-2 ring-inset ring-metronic-primary/30': dragOver == {{ $carousel->id }} 
+                                                    }">
                                     <td class="px-4 py-4 text-center">
                                         <div
                                             class="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-metronic-primary transition-colors">
@@ -263,9 +263,6 @@
                 </div>
             </x-slot>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$carousels" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

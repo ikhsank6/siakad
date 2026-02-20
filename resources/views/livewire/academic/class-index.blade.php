@@ -52,9 +52,6 @@
                 @endforelse
             </x-ui.table.tbody>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$classes" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

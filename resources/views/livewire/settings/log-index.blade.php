@@ -8,7 +8,9 @@
         <x-slot name="headerAction">
             <div class="flex items-center gap-3">
                 <flux:dropdown>
-                    <flux:button variant="ghost" class="h-10! px-3! min-w-[200px] rounded-xl! border border-zinc-200! dark:border-zinc-700! text-zinc-800! dark:text-white! font-bold! bg-zinc-50/50! dark:bg-zinc-800/40! shadow-sm!" icon="document-text" icon-trailing="chevron-down">
+                    <flux:button variant="ghost"
+                        class="h-10! px-3! min-w-[200px] rounded-xl! border border-zinc-200! dark:border-zinc-700! text-zinc-800! dark:text-white! font-bold! bg-zinc-50/50! dark:bg-zinc-800/40! shadow-sm!"
+                        icon="document-text" icon-trailing="chevron-down">
                         {{ $selectedFile?->name ?? 'Select File' }} ({{ $selectedFile?->sizeFormatted() ?? '0 B' }})
                     </flux:button>
 
@@ -22,8 +24,9 @@
                         </flux:menu.radio.group>
                     </flux:menu>
                 </flux:dropdown>
-                
-                <flux:button wire:click="downloadLog" icon="arrow-down-tray" size="sm" tooltip="Download Log File" class="h-10! w-10! flex items-center justify-center rounded-xl! border border-zinc-200! dark:border-zinc-700! shadow-sm!" />
+
+                <flux:button wire:click="downloadLog" icon="arrow-down-tray" size="sm" tooltip="Download Log File"
+                    class="h-10! w-10! flex items-center justify-center rounded-xl! border border-zinc-200! dark:border-zinc-700! shadow-sm!" />
             </div>
         </x-slot>
 
@@ -51,7 +54,7 @@
                                 <x-ui.table.td>
                                     @php
                                         $severity = strtolower($log->level);
-                                        $variant = match($severity) {
+                                        $variant = match ($severity) {
                                             'error', 'critical', 'alert', 'emergency' => 'danger',
                                             'warning' => 'warning',
                                             'notice', 'info' => 'info',
@@ -68,24 +71,32 @@
                                 </x-ui.table.td>
                                 <x-ui.table.td>
                                     <div class="flex flex-col gap-1">
-                                        <div class="text-sm text-zinc-700 dark:text-zinc-300 break-all font-mono line-clamp-2" :class="expanded ? 'line-clamp-none' : 'line-clamp-2'">
+                                        <div class="text-sm text-zinc-700 dark:text-zinc-300 break-all font-mono line-clamp-2"
+                                            :class="expanded ? 'line-clamp-none' : 'line-clamp-2'">
                                             {{ $log->message }}
                                         </div>
-                                        
+
                                         @if(strlen($log->getOriginalText()) > 200)
-                                            <button @click="expanded = !expanded" class="text-indigo-500 hover:text-indigo-400 text-[10px] font-bold uppercase text-left">
+                                            <button @click="expanded = !expanded"
+                                                class="text-indigo-500 hover:text-indigo-400 text-[10px] font-bold uppercase text-left">
                                                 <span x-show="!expanded">Show Full Trace</span>
                                                 <span x-show="expanded">Show Less</span>
                                             </button>
                                         @endif
 
-                                        <div x-show="expanded" x-cloak x-data="{ tab: 'stack' }" class="mt-4 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm transition-all">
+                                        <div x-show="expanded" x-cloak x-data="{ tab: 'stack' }"
+                                            class="mt-4 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm transition-all">
                                             {{-- Tabs Header --}}
-                                            <div class="flex items-center px-4 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
-                                                <button @click="tab = 'stack'" :class="tab === 'stack' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'" class="py-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all">
+                                            <div
+                                                class="flex items-center px-4 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
+                                                <button @click="tab = 'stack'"
+                                                    :class="tab === 'stack' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                                                    class="py-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all">
                                                     Stack Trace
                                                 </button>
-                                                <button @click="tab = 'raw'" :class="tab === 'raw' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'" class="py-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all">
+                                                <button @click="tab = 'raw'"
+                                                    :class="tab === 'raw' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                                                    class="py-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all">
                                                     Raw
                                                 </button>
                                             </div>
@@ -93,17 +104,21 @@
                                             {{-- Tabs Content --}}
                                             <div class="p-0 max-h-[500px] overflow-y-auto">
                                                 {{-- Stack Trace View (Parsed/Better Wrapping) --}}
-                                                <div x-show="tab === 'stack'" class="p-4 font-mono text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-400 whitespace-pre-wrap wrap-break-word italic">
+                                                <div x-show="tab === 'stack'"
+                                                    class="p-4 font-mono text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-400 whitespace-pre-wrap wrap-break-word italic">
                                                     {{ $log->message }}
                                                     @if(count($log->context) > 0)
                                                         <hr class="my-3 border-zinc-200 dark:border-zinc-800">
-                                                        <div class="font-bold mb-1 opacity-50 uppercase tracking-tighter text-[9px]">Context:</div>
+                                                        <div
+                                                            class="font-bold mb-1 opacity-50 uppercase tracking-tighter text-[9px]">
+                                                            Context:</div>
                                                         {{ json_encode($log->context, JSON_PRETTY_PRINT) }}
                                                     @endif
                                                 </div>
 
                                                 {{-- Raw View --}}
-                                                <div x-show="tab === 'raw'" class="p-4 font-mono text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-500 whitespace-pre-wrap break-all bg-zinc-50/50 dark:bg-zinc-900/50">
+                                                <div x-show="tab === 'raw'"
+                                                    class="p-4 font-mono text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-500 whitespace-pre-wrap break-all bg-zinc-50/50 dark:bg-zinc-900/50">
                                                     {{ $log->getOriginalText() }}
                                                 </div>
                                             </div>
@@ -127,11 +142,6 @@
                     @endif
                 </x-ui.table.tbody>
 
-                @if($logs)
-                    <x-slot name="footer">
-                        <x-ui.pagination :paginator="$logs" />
-                    </x-slot>
-                @endif
             </x-ui.table>
         </div>
     </x-ui.card>

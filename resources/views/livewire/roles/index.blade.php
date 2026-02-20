@@ -97,9 +97,6 @@
                 </div>
             </x-slot>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$roles" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

@@ -111,9 +111,6 @@
                 </div>
             </x-slot>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$categories" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

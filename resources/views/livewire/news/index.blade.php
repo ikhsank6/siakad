@@ -130,9 +130,6 @@
                 </div>
             </x-slot>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$news" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

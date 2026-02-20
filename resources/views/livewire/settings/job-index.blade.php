@@ -107,11 +107,6 @@
                 @endforelse
             </x-ui.table.tbody>
 
-            @if($failedJobs->hasPages())
-                <x-slot name="footer">
-                    <x-ui.pagination :paginator="$failedJobs" />
-                </x-slot>
-            @endif
         </x-ui.table>
     </x-ui.card>
 </div>

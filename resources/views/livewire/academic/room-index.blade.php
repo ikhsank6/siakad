@@ -44,9 +44,6 @@
                 @endforelse
             </x-ui.table.tbody>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$rooms" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

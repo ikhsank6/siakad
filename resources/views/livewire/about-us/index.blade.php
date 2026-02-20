@@ -4,9 +4,7 @@
 </x-slot>
 
 <div>
-    <x-ui.card
-        title="About Us"
-        description="Manage company information, contacts, and location.">
+    <x-ui.card title="About Us" description="Manage company information, contacts, and location.">
 
         <x-slot name="headerAction">
             @if(!$hasRecord)
@@ -38,8 +36,7 @@
                                 <img src="{{ Storage::url($item->logo) }}" alt="{{ $item->company_name }}"
                                     class="w-12 h-12 object-contain rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white">
                             @else
-                                <div
-                                    class="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg flex items-center justify-center">
+                                <div class="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg flex items-center justify-center">
                                     <flux:icon name="building-office-2" class="w-6 h-6 text-zinc-400" />
                                 </div>
                             @endif
@@ -94,8 +91,7 @@
                                     @else
                                         <div
                                             class="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                                            <flux:icon name="building-office-2" variant="mini"
-                                                class="w-6 h-6 text-zinc-400" />
+                                            <flux:icon name="building-office-2" variant="mini" class="w-6 h-6 text-zinc-400" />
                                         </div>
                                     @endif
                                     <div class="min-w-0">
@@ -137,9 +133,6 @@
                 </div>
             </x-slot>
 
-            <x-slot name="footer">
-                <x-ui.pagination :paginator="$items" />
-            </x-slot>
         </x-ui.table>
     </x-ui.card>
 

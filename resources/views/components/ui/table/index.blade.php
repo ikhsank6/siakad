@@ -1,4 +1,4 @@
-@props(['header' => null, 'footer' => null, 'view' => 'table', 'board' => null, 'customTable' => null])
+@props(['header' => null, 'footer' => null, 'view' => 'table', 'board' => null, 'customTable' => null, 'paginator' => null])
 
 <div {{ $attributes->class(['flex flex-col']) }}>
     @if ($header)
@@ -36,9 +36,13 @@
         </div>
     @endif
 
-    @if ($footer)
+    @if ($footer || $paginator)
         <div class="mt-4">
-            {{ $footer }}
+            @if ($footer)
+                {{ $footer }}
+            @elseif ($paginator)
+                <x-ui.pagination :paginator="$paginator" />
+            @endif
         </div>
     @endif
 </div>

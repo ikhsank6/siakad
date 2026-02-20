@@ -9,7 +9,7 @@
             <x-ui.button.add label="Tambah Menu" tooltip="Tambah Menu Baru" />
         </x-slot>
 
-        <x-ui.table :view="$view">
+        <x-ui.table :paginator="$menus" :view="$view">
             <x-slot name="header">
                 <x-ui.table.header search="search" :showFilters="false" :showBulk="false" :showColumns="false"
                     :showPageSize="false" :showViewToggle="true" />
@@ -154,10 +154,10 @@
                                     x-on:dragleave="handleDragLeave($event)" x-on:drop="handleDrop($event, {{ $menu->id }})"
                                     class="bg-white dark:bg-zinc-900 transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                                     :class="{ 
-                                            'opacity-25 scale-95': dragging === {{ $menu->id }}, 
-                                            'bg-metronic-primary/10 dark:bg-metronic-primary/20 ring-2 ring-inset ring-metronic-primary': dragOver === {{ $menu->id }} && dropAsChild !== {{ $menu->id }},
-                                            'bg-green-50 dark:bg-green-900/20 ring-2 ring-inset ring-green-500': dropAsChild === {{ $menu->id }}
-                                        }">
+                                                'opacity-25 scale-95': dragging === {{ $menu->id }}, 
+                                                'bg-metronic-primary/10 dark:bg-metronic-primary/20 ring-2 ring-inset ring-metronic-primary': dragOver === {{ $menu->id }} && dropAsChild !== {{ $menu->id }},
+                                                'bg-green-50 dark:bg-green-900/20 ring-2 ring-inset ring-green-500': dropAsChild === {{ $menu->id }}
+                                            }">
                                     <td class="px-4 py-4 text-center">
                                         <div
                                             class="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-metronic-primary transition-colors">
@@ -333,9 +333,9 @@
                             x-on:dragover="handleCardDragOver($event, {{ $root->id }})"
                             x-on:dragleave="handleCardDragLeave($event)" x-on:drop="handleCardDrop($event, {{ $root->id }})"
                             :class="{ 
-                                    'ring-2 ring-metronic-primary ring-offset-2 dark:ring-offset-zinc-900': dragOverCard === {{ $root->id }},
-                                    'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-zinc-900 bg-green-50 dark:bg-green-900/20': dropTargetParent === {{ $root->id }}
-                                }">
+                                        'ring-2 ring-metronic-primary ring-offset-2 dark:ring-offset-zinc-900': dragOverCard === {{ $root->id }},
+                                        'ring-2 ring-green-500 ring-offset-2 dark:ring-offset-zinc-900 bg-green-50 dark:bg-green-900/20': dropTargetParent === {{ $root->id }}
+                                    }">
                             <!-- Root Header -->
                             <div
                                 class="px-5 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between group">
@@ -360,64 +360,64 @@
 
                             <!-- Children List with Drag & Drop -->
                             <div class="p-3 flex-1 space-y-2" x-data="{
-                                        parentId: {{ $root->id }},
-                                        draggingChild: null,
-                                        dragOverChild: null,
-                                        childItems: @js($menus->where('parent_id', $root->id)->sortBy('order')->pluck('id')->values()->toArray()),
+                                            parentId: {{ $root->id }},
+                                            draggingChild: null,
+                                            dragOverChild: null,
+                                            childItems: @js($menus->where('parent_id', $root->id)->sortBy('order')->pluck('id')->values()->toArray()),
 
-                                        handleChildDragStart(e, id) {
-                                            e.stopPropagation();
-                                            this.draggingChild = id;
-                                            e.dataTransfer.effectAllowed = 'move';
-                                            e.dataTransfer.setData('text/plain', id);
-                                            e.target.classList.add('opacity-50');
-                                            // Notify parent scope about the drag
-                                            $dispatch('child-drag-start', { childId: id, parentId: this.parentId });
-                                            // Also set in parent scope directly
-                                            setGlobalDraggingChild(id, this.parentId);
-                                        },
+                                            handleChildDragStart(e, id) {
+                                                e.stopPropagation();
+                                                this.draggingChild = id;
+                                                e.dataTransfer.effectAllowed = 'move';
+                                                e.dataTransfer.setData('text/plain', id);
+                                                e.target.classList.add('opacity-50');
+                                                // Notify parent scope about the drag
+                                                $dispatch('child-drag-start', { childId: id, parentId: this.parentId });
+                                                // Also set in parent scope directly
+                                                setGlobalDraggingChild(id, this.parentId);
+                                            },
 
-                                        handleChildDragEnd(e) {
-                                            e.target.classList.remove('opacity-50');
-                                            this.draggingChild = null;
-                                            this.dragOverChild = null;
-                                            // Clear parent scope
-                                            clearGlobalDraggingChild();
-                                        },
+                                            handleChildDragEnd(e) {
+                                                e.target.classList.remove('opacity-50');
+                                                this.draggingChild = null;
+                                                this.dragOverChild = null;
+                                                // Clear parent scope
+                                                clearGlobalDraggingChild();
+                                            },
 
-                                        handleChildDragOver(e, id) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            if (this.draggingChild && this.draggingChild !== id) {
-                                                this.dragOverChild = id;
+                                            handleChildDragOver(e, id) {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (this.draggingChild && this.draggingChild !== id) {
+                                                    this.dragOverChild = id;
+                                                }
+                                            },
+
+                                            handleChildDragLeave(e) {
+                                                this.dragOverChild = null;
+                                            },
+
+                                            handleChildDrop(e, targetId) {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+
+                                                // Only handle if dragging within same parent
+                                                if (!this.draggingChild || this.draggingChild === targetId) return;
+
+                                                const dragIndex = this.childItems.indexOf(this.draggingChild);
+                                                const targetIndex = this.childItems.indexOf(targetId);
+
+                                                if (dragIndex === -1 || targetIndex === -1) return;
+
+                                                this.childItems.splice(dragIndex, 1);
+                                                this.childItems.splice(targetIndex, 0, this.draggingChild);
+
+                                                $wire.updateOrder(this.childItems);
+
+                                                this.draggingChild = null;
+                                                this.dragOverChild = null;
                                             }
-                                        },
-
-                                        handleChildDragLeave(e) {
-                                            this.dragOverChild = null;
-                                        },
-
-                                        handleChildDrop(e, targetId) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-
-                                            // Only handle if dragging within same parent
-                                            if (!this.draggingChild || this.draggingChild === targetId) return;
-
-                                            const dragIndex = this.childItems.indexOf(this.draggingChild);
-                                            const targetIndex = this.childItems.indexOf(targetId);
-
-                                            if (dragIndex === -1 || targetIndex === -1) return;
-
-                                            this.childItems.splice(dragIndex, 1);
-                                            this.childItems.splice(targetIndex, 0, this.draggingChild);
-
-                                            $wire.updateOrder(this.childItems);
-
-                                            this.draggingChild = null;
-                                            this.dragOverChild = null;
-                                        }
-                                    }">
+                                        }">
                                 @php
                                     $children = $menus->where('parent_id', $root->id)->sortBy('order');
                                 @endphp
