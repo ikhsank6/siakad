@@ -4,151 +4,152 @@
 </x-slot>
 
 <div>
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Sidebar Config -->
-        <div class="lg:col-span-1 space-y-6">
-            <x-ui.card title="Academic Year" description="Select the active academic year for scheduling.">
-                <div class="space-y-4">
-                    <flux:select wire:model.live="activeYearId" placeholder="Select Academic Year">
-                        @foreach($academicYears as $year)
-                            <flux:select.option value="{{ $year->id }}">{{ $year->name }} - {{ $year->semester }}
-                            </flux:select.option>
-                        @endforeach
-                    </flux:select>
-
-                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
-                        <flux:checkbox wire:model="useDynamicRooms" label="Use Dynamic Rooms" description="If checked, classes will not be strictly assigned to a single room." />
-                        
-                        <flux:button wire:click="generateSchedule" variant="primary" class="w-full" icon="sparkles"
+    <div class="space-y-6">
+        <!-- System Configuration (Always at the Top) -->
+        <x-ui.card title="System Configuration" description="Manage all scheduling parameters in one place.">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 p-1">
+                <!-- Academic Year & Session -->
+                <div class="md:col-span-3 space-y-6">
+                    <div>
+                        <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Academic Context
+                        </h4>
+                        <div class="space-y-4">
+                            <flux:select wire:model.live="activeYearId" label="Academic Year"
+                                placeholder="Select Academic Year">
+                                @foreach($academicYears as $year)
+                                    <flux:select.option value="{{ $year->id }}">{{ $year->name }} - {{ $year->semester }}
+                                    </flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <flux:checkbox wire:model="useDynamicRooms" label="Use Dynamic Rooms"
+                                description="Auto-assign rooms based on availability." />
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                        <flux:button wire:click="generateSchedule" variant="primary"
+                            class="w-full shadow-lg shadow-metronic-primary/20" icon="sparkles"
                             wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="generateSchedule">Simulate Schedule</span>
-                            <span wire:loading wire:target="generateSchedule">Processing...</span>
+                            Simulate Schedule
                         </flux:button>
                     </div>
                 </div>
-            </x-ui.card>
 
-            <x-ui.card class="overflow-hidden">
-                <div class="p-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/20">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-xl bg-metronic-primary/10 text-metronic-primary">
-                            <flux:icon name="clock" variant="mini" />
+                <!-- School Hours -->
+                <div class="md:col-span-6 border-l border-zinc-100 dark:border-zinc-800 pl-8">
+                    <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-5">Weekly School
+                        Schedule</h4>
+                    <div class="max-h-[320px] overflow-y-auto pr-4 style-scrollbar">
+                        <div class="space-y-4">
+                            @foreach($days ?? [] as $dayNum => $dayName)
+                                <div
+                                    class="flex items-center gap-6 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 p-2 rounded-xl transition-all duration-200">
+                                    <div class="w-24">
+                                        <span
+                                            class="text-xs font-black text-zinc-600 dark:text-zinc-400 uppercase tracking-tighter group-hover:text-metronic-primary transition-colors">{{ $dayName }}</span>
+                                    </div>
+                                    <div class="flex-1 grid grid-cols-2 gap-4">
+                                        <div class="space-y-1 text-zinc-950 dark:text-white">
+                                            <flux:input wire:model="daySpecificConfig.{{ $dayNum }}.entry" type="time"
+                                                size="sm" label="Check In" class="text-sm! font-black" />
+                                        </div>
+                                        <div class="space-y-1 text-zinc-950 dark:text-white">
+                                            <flux:input wire:model="daySpecificConfig.{{ $dayNum }}.exit" type="time"
+                                                size="sm" label="Check Out" class="text-sm! font-black" />
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
+                    </div>
+                    <div
+                        class="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-end gap-4 text-zinc-950 dark:text-white">
+                        <div class="flex-1">
+                            <flux:input wire:model="periodDuration" type="number" size="sm" label="Session Duration"
+                                suffix="min" class="font-bold" />
+                        </div>
+                        <flux:button wire:click="regenerateTimeSlots" variant="filled" size="sm" class="mb-0.5 px-6"
+                            wire:loading.attr="disabled">Update Structure</flux:button>
+                    </div>
+                </div>
+
+                <!-- Constraints & Breaks -->
+                <div class="md:col-span-3 border-l border-zinc-100 dark:border-zinc-800 pl-8 space-y-8">
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Global Constraints -->
                         <div>
-                            <h3 class="text-base font-black text-zinc-900 dark:text-white leading-none">School Hours</h3>
-                            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Configure daily limits</p>
+                            <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Teaching
+                                Limits</h4>
+                            <div class="space-y-3">
+                                <flux:input wire:model="globalMinHours" type="number" label="Min (hrs/wk)" size="sm" />
+                                <flux:input wire:model="globalMaxHours" type="number" label="Max (hrs/wk)" size="sm" />
+                                <flux:button wire:click="saveGlobalRules" variant="ghost" size="xs" class="w-full"
+                                    wire:loading.attr="disabled">Save Limits</flux:button>
+                            </div>
+                        </div>
+
+                        <!-- Break Periods -->
+                        <div>
+                            <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Break
+                                Periods</h4>
+                            <div
+                                class="max-h-[160px] overflow-y-auto space-y-2 pr-2 style-scrollbar mb-3 border-b border-zinc-50 dark:border-zinc-800/50 pb-2">
+                                @foreach($breakTimes as $index => $break)
+                                    <div class="flex items-center gap-1.5 group">
+                                        <div class="flex-1 grid grid-cols-2 gap-1">
+                                            <flux:input wire:model="breakTimes.{{ $index }}.start" type="time" size="sm" />
+                                            <flux:input wire:model="breakTimes.{{ $index }}.end" type="time" size="sm" />
+                                        </div>
+                                        <flux:button wire:click="removeBreakTime({{ $index }})" variant="ghost" icon="trash"
+                                            size="xs" class="text-red-500 opacity-0 group-hover:opacity-100" />
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="flex gap-2">
+                                <flux:button wire:click="addBreakTime" variant="ghost" size="xs" class="flex-1">Add
+                                </flux:button>
+                                <flux:button wire:click="saveBreakTimes" variant="filled" size="xs" class="flex-1"
+                                    wire:loading.attr="disabled">Save</flux:button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                        <div
+                            class="p-3 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-800/50 rounded-xl">
+                            <div class="flex gap-2 items-start">
+                                <flux:icon.information-circle class="w-4 h-4 text-amber-600 mt-0.5" />
+                                <p class="text-[10px] text-amber-700 dark:text-amber-400 leading-tight">
+                                    Configuration changes will require a <span class="font-bold underline">new
+                                        simulation</span> to take effect in the draft schedule.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </x-ui.card>
 
-                <div class="p-5 space-y-6">
-                    <div class="space-y-4">
-                        @foreach($days as $dayNum => $dayName)
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between px-1">
-                                    <span class="text-xs font-black text-zinc-900 dark:text-zinc-200 uppercase tracking-tight">{{ $dayName }}</span>
-                                    <span class="text-[9px] font-bold text-zinc-400">Time Window</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div class="relative group">
-                                        <div class="absolute -top-2 left-2 px-1 bg-white dark:bg-zinc-900 text-[8px] font-black text-zinc-400 uppercase z-10 transition-colors group-focus-within:text-metronic-primary">In</div>
-                                        <flux:input wire:model="daySpecificConfig.{{ $dayNum }}.entry" type="time" size="sm" class="!text-xs font-bold" />
-                                    </div>
-                                    <div class="relative group">
-                                        <div class="absolute -top-2 left-2 px-1 bg-white dark:bg-zinc-900 text-[8px] font-black text-zinc-400 uppercase z-10 transition-colors group-focus-within:text-metronic-primary">Out</div>
-                                        <flux:input wire:model="daySpecificConfig.{{ $dayNum }}.exit" type="time" size="sm" class="!text-xs font-bold" />
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
-                        <flux:input wire:model="periodDuration" type="number" label="Session Duration" suffix="mins" />
-                        
-                        <flux:button wire:click="regenerateTimeSlots" variant="primary" class="w-full shadow-lg shadow-metronic-primary/10" wire:loading.attr="disabled">
-                            <flux:icon name="arrow-path" variant="mini" class="mr-2" wire:loading.remove wire:target="regenerateTimeSlots" />
-                            <flux:icon.loading class="mr-2" wire:loading wire:target="regenerateTimeSlots" />
-                            Update Time Structure
-                        </flux:button>
-                    </div>
-                </div>
-            </x-ui.card>
-
-            <x-ui.card title="Global Constraints" description="Set default teaching hours per week.">
-                <div class="space-y-4">
-                    <flux:input wire:model="globalMinHours" type="number" label="Global Min Hours" suffix="hrs/week" />
-                    <flux:input wire:model="globalMaxHours" type="number" label="Global Max Hours" suffix="hrs/week" />
-
-                    <flux:button wire:click="saveGlobalRules" variant="filled" class="w-full" wire:loading.attr="disabled">
-                        <flux:icon name="check-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="saveGlobalRules" />
-                        <flux:icon.loading class="mr-2" wire:loading wire:target="saveGlobalRules" />
-                        Save Global Rules
-                    </flux:button>
-                </div>
-            </x-ui.card>
-
-            <!-- Break Times -->
-            <x-ui.card title="Break Periods" description="Set times when no classes can be scheduled.">
-                <div class="space-y-4">
-                    @foreach($breakTimes as $index => $break)
-                        <div class="flex items-center gap-2 group">
-                            <div class="flex-1 grid grid-cols-2 gap-2">
-                                <flux:input wire:model="breakTimes.{{ $index }}.start" type="time"
-                                    label="{{ $index === 0 ? 'Start Time' : '' }}" />
-                                <flux:input wire:model="breakTimes.{{ $index }}.end" type="time"
-                                    label="{{ $index === 0 ? 'End Time' : '' }}" />
-                            </div>
-                            <div class="{{ $index === 0 ? 'pt-6' : '' }}">
-                                <flux:button wire:click="removeBreakTime({{ $index }})" variant="ghost" icon="trash"
-                                    size="sm" class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                        </div>
-                    @endforeach
-
-                    <div class="pt-4 flex items-center justify-between">
-                        <flux:button wire:click="addBreakTime" variant="ghost" icon="plus" size="sm">Add Break
-                        </flux:button>
-                        <flux:button wire:click="saveBreakTimes" variant="filled" size="sm" wire:loading.attr="disabled">
-                            <flux:icon name="check-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="saveBreakTimes" />
-                            <flux:icon.loading class="mr-2" wire:loading wire:target="saveBreakTimes" />
-                            Save Breaks
-                        </flux:button>
-                    </div>
-
-                    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg">
-                        <p class="text-[9px] text-amber-700 dark:text-amber-400">
-                            <flux:icon.information-circle class="w-3 h-3 inline mr-1" />
-                            Breaks apply to all days (Mon-Sat).
-                        </p>
-                    </div>
-                </div>
-            </x-ui.card>
+        <!-- Tab Switcher (Now after System Configuration) -->
+        <div class="flex items-center gap-2 pb-2">
+            <flux:button wire:click="$set('activeTab', 'config')" wire:loading.attr="disabled"
+                :variant="$activeTab === 'config' ? 'primary' : 'ghost'">
+                <flux:icon name="cog-6-tooth" variant="mini" class="mr-2" />
+                Configuration
+            </flux:button>
+            <flux:button wire:click="$set('activeTab', 'simulate')" wire:loading.attr="disabled"
+                :variant="$activeTab === 'simulate' ? 'primary' : 'ghost'">
+                <flux:icon name="play-circle" variant="mini" class="mr-2" />
+                Simulation Results
+            </flux:button>
+            <flux:button wire:click="$set('activeTab', 'publish')" wire:loading.attr="disabled"
+                :variant="$activeTab === 'publish' ? 'primary' : 'ghost'">
+                <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" />
+                Publish & Approval
+            </flux:button>
         </div>
 
-        <!-- Main Content -->
-        <div class="lg:col-span-3">
-            <div class="flex items-center gap-2 mb-6">
-                <flux:button wire:click="$set('activeTab', 'config')" wire:loading.attr="disabled"
-                    :variant="$activeTab === 'config' ? 'primary' : 'ghost'">
-                    <flux:icon name="cog-6-tooth" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'config')" />
-                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'config')" />
-                    Configuration
-                </flux:button>
-                <flux:button wire:click="$set('activeTab', 'simulate')" wire:loading.attr="disabled"
-                    :variant="$activeTab === 'simulate' ? 'primary' : 'ghost'">
-                    <flux:icon name="play-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'simulate')" />
-                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'simulate')" />
-                    Simulation Results
-                </flux:button>
-                <flux:button wire:click="$set('activeTab', 'publish')" wire:loading.attr="disabled"
-                    :variant="$activeTab === 'publish' ? 'primary' : 'ghost'">
-                    <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'publish')" />
-                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'publish')" />
-                    Publish & Approval
-                </flux:button>
-            </div>
-
+        <!-- Main Content Area (Tab Content) -->
+        <div class="w-full">
             @if($activeTab === 'config')
                 <!-- Teacher Overrides -->
                 <x-ui.card title="Teacher Overrides" description="Set custom teaching hour limits for specific teachers.">
@@ -175,10 +176,12 @@
                                         <td class="px-4 py-3 text-right">
                                             <flux:button
                                                 wire:click="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})"
-                                                wire:loading.attr="disabled"
-                                                variant="ghost" size="sm" tooltip="Override">
-                                                <flux:icon name="pencil-square" variant="mini" class="w-4 h-4" wire:loading.remove wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
-                                                <flux:icon.loading class="w-4 h-4" wire:loading wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
+                                                wire:loading.attr="disabled" variant="ghost" size="sm" tooltip="Override">
+                                                <flux:icon name="pencil-square" variant="mini" class="w-4 h-4"
+                                                    wire:loading.remove
+                                                    wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
+                                                <flux:icon.loading class="w-4 h-4" wire:loading
+                                                    wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
                                             </flux:button>
                                         </td>
                                     </tr>
@@ -207,42 +210,49 @@
                         <div class="mb-6 flex flex-col sm:flex-row gap-4">
                             <flux:select wire:model.live="previewFilterClass" placeholder="Filter by Class" class="flex-1">
                                 <flux:select.option value="">All Classes</flux:select.option>
-                                @foreach($classes as $c)
+                                @foreach($classes ?? collect() as $c)
                                     <flux:select.option value="{{ $c->id }}">{{ $c->name }}</flux:select.option>
                                 @endforeach
                             </flux:select>
 
                             <flux:select wire:model.live="previewFilterTeacher" placeholder="Filter by Teacher" class="flex-1">
                                 <flux:select.option value="">All Teachers</flux:select.option>
-                                @foreach($teachers as $t)
+                                @foreach($teachers ?? collect() as $t)
                                     <flux:select.option value="{{ $t->id }}">{{ $t->name }}</flux:select.option>
                                 @endforeach
                             </flux:select>
                         </div>
 
                         <div class="relative overflow-hidden group">
-                            <!-- Loading Overlay for table updates -->
+                            <!-- Loading Overlay -->
                             <div wire:loading wire:target="previewFilterClass, previewFilterTeacher, generateSchedule"
                                 class="absolute inset-0 z-30 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-[2px] flex items-center justify-center">
-                                <div class="flex flex-col items-center gap-3 p-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+                                <div
+                                    class="flex flex-col items-center gap-3 p-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-700">
                                     <flux:icon.loading class="w-10 h-10 text-metronic-primary" />
                                     <span class="text-sm font-bold text-zinc-900 dark:text-white">Updating Schedule...</span>
                                 </div>
                             </div>
 
-                            <div class="overflow-x-auto overflow-y-auto max-h-[700px] border border-zinc-200 dark:border-zinc-800 rounded-lg style-scrollbar">
-                                @php 
+                            <div
+                                class="overflow-x-auto overflow-y-auto max-h-[700px] border border-zinc-200 dark:border-zinc-800 rounded-lg style-scrollbar">
+                                @php
                                     $dayShortLabels = [1 => 'Sen', 2 => 'Sel', 3 => 'Ra', 4 => 'Ka', 5 => 'Ju', 6 => 'Sab'];
                                     $headerSlots = \App\Models\TimeSlot::where('day', 1)->orderBy('start_time')->get();
                                 @endphp
 
-                                <table class="w-full text-xs text-center border-collapse border border-zinc-200 dark:border-zinc-800">
-                                    <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold sticky top-0 z-20">
+                                <table
+                                    class="w-full text-xs text-center border-collapse border border-zinc-200 dark:border-zinc-800">
+                                    <thead
+                                        class="bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black sticky top-0 z-20">
                                         <tr>
-                                            <th rowspan="2" class="border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 w-16"></th>
+                                            <th rowspan="2"
+                                                class="border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 w-16">
+                                            </th>
                                             @php $periodIdx = 1; @endphp
-                                            @foreach($headerSlots as $slot)
-                                                <th class="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-base">
+                                            @foreach($headerSlots ?? [] as $slot)
+                                                <th
+                                                    class="border border-zinc-200 dark:border-zinc-700 px-2 py-3 text-lg font-black text-metronic-primary">
                                                     @if(!$slot->is_break)
                                                         {{ $periodIdx++ }}
                                                     @endif
@@ -250,8 +260,9 @@
                                             @endforeach
                                         </tr>
                                         <tr>
-                                            @foreach($headerSlots as $slot)
-                                                <th class="border border-zinc-200 dark:border-zinc-700 px-1 py-1 text-[9px] font-normal text-zinc-500">
+                                            @foreach($headerSlots ?? [] as $slot)
+                                                <th
+                                                    class="border border-zinc-200 dark:border-zinc-700 px-1 py-1.5 text-[10px] font-bold text-zinc-500 bg-zinc-50/50 dark:bg-zinc-800/50">
                                                     {{ substr($slot->start_time, 0, 5) }} - {{ substr($slot->end_time, 0, 5) }}
                                                 </th>
                                             @endforeach
@@ -260,29 +271,36 @@
                                     <tbody>
                                         @foreach($days as $dayNum => $dayName)
                                             <tr class="h-32">
-                                                <td class="border border-zinc-200 dark:border-zinc-700 text-2xl font-black px-4 bg-zinc-50/50 dark:bg-zinc-800/50">
+                                                <td
+                                                    class="border border-zinc-200 dark:border-zinc-700 text-2xl font-black px-4 bg-zinc-50/50 dark:bg-zinc-800/50">
                                                     {{ $dayShortLabels[$dayNum] ?? '' }}
                                                 </td>
                                                 @php $dayBlocks = $calendarData[$dayNum] ?? []; @endphp
                                                 @foreach($dayBlocks as $block)
-                                                    <td colspan="{{ $block['span'] }}" class="border border-zinc-200 dark:border-zinc-700 p-1 relative min-w-[120px] {{ $block['type'] === 'break' ? 'bg-zinc-100/40 dark:bg-zinc-800/40' : '' }}">
+                                                    <td colspan="{{ $block['span'] }}"
+                                                        class="border border-zinc-200 dark:border-zinc-700 p-1 relative min-w-[120px] {{ $block['type'] === 'break' ? 'bg-zinc-100/40 dark:bg-zinc-800/40' : '' }}">
                                                         @if($block['type'] === 'break')
                                                             <div class="flex items-center justify-center p-2">
-                                                                <span class="text-[9px] font-black uppercase tracking-widest text-zinc-400 rotate-90 whitespace-nowrap">{{ $block['name'] }}</span>
+                                                                <span
+                                                                    class="text-[9px] font-black uppercase tracking-widest text-zinc-400 rotate-90 whitespace-nowrap">{{ $block['name'] }}</span>
                                                             </div>
                                                         @elseif($block['type'] === 'subject')
                                                             <div class="flex flex-col gap-1.5 h-full">
                                                                 @foreach($block['items'] as $item)
-                                                                    <div class="p-2 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
-                                                                        <div class="font-bold text-zinc-900 dark:text-zinc-100 text-[11px] leading-tight mb-1">
+                                                                    <div
+                                                                        class="p-2 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                                                                        <div
+                                                                            class="font-bold text-zinc-900 dark:text-zinc-100 text-[11px] leading-tight mb-1">
                                                                             {{ $item->subject->name }}
                                                                         </div>
                                                                         <div class="text-[9px] text-zinc-500 truncate mb-2">
                                                                             {{ $item->teacher->name }}
                                                                         </div>
                                                                         <div class="flex gap-1 justify-center">
-                                                                            <span class="px-1 py-0.5 rounded bg-green-50 text-green-700 border border-green-100 text-[8px] font-bold">R.{{ preg_replace('/[^0-9]/', '', $item->room->name) ?: $item->room->name }}</span>
-                                                                            <span class="px-1 py-0.5 rounded bg-zinc-50 text-zinc-600 border border-zinc-100 text-[8px] font-bold">{{ $item->academicClass->name }}</span>
+                                                                            <span
+                                                                                class="px-1 py-0.5 rounded bg-green-50 text-green-700 border border-green-100 text-[8px] font-bold">R.{{ preg_replace('/[^0-9]/', '', $item->room->name) ?: $item->room->name }}</span>
+                                                                            <span
+                                                                                class="px-1 py-0.5 rounded bg-zinc-50 text-zinc-600 border border-zinc-100 text-[8px] font-bold">{{ $item->academicClass->name }}</span>
                                                                         </div>
                                                                     </div>
                                                                 @endforeach
@@ -325,8 +343,10 @@
                                     </p>
                                 </div>
                             </div>
-                            <flux:button wire:click="publishSchedule" variant="primary" class="w-full" wire:loading.attr="disabled">
-                                <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" wire:loading.remove wire:target="publishSchedule" />
+                            <flux:button wire:click="publishSchedule" variant="primary" class="w-full"
+                                wire:loading.attr="disabled">
+                                <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" wire:loading.remove
+                                    wire:target="publishSchedule" />
                                 <flux:icon.loading class="mr-2" wire:loading wire:target="publishSchedule" />
                                 Approve & Publish
                             </flux:button>
@@ -342,8 +362,10 @@
                                     <p class="text-xs text-zinc-500">Prevent any further changes to the active schedule.</p>
                                 </div>
                             </div>
-                            <flux:button wire:click="lockSchedule" variant="filled" class="w-full" wire:loading.attr="disabled">
-                                <flux:icon name="lock-closed" variant="mini" class="mr-2" wire:loading.remove wire:target="lockSchedule" />
+                            <flux:button wire:click="lockSchedule" variant="filled" class="w-full"
+                                wire:loading.attr="disabled">
+                                <flux:icon name="lock-closed" variant="mini" class="mr-2" wire:loading.remove
+                                    wire:target="lockSchedule" />
                                 <flux:icon.loading class="mr-2" wire:loading wire:target="lockSchedule" />
                                 Finalize & Lock
                             </flux:button>
