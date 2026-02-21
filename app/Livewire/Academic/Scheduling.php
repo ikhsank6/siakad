@@ -22,6 +22,9 @@ class Scheduling extends Component
     public $globalMaxHours = 24;
     public $activeTab = 'config'; // config, simulate, publish
     public $useDynamicRooms = false;
+    public $periodDuration = 45;
+    public $entryTime = '07:00';
+    public $exitTime = '15:30';
     public $breakTimes = []; // [['start' => '09:15', 'end' => '10:00']]
 
     public $showOverrideModal = false;
@@ -119,6 +122,50 @@ class Scheduling extends Component
         }
 
         $this->dispatch('notify', text: 'Break times updated successfully.', variant: 'success');
+    }
+
+    public function regenerateTimeSlots()
+    {
+        \App\Models\TimeSlot::truncate();
+
+        for ($day = 1; $day <= 6; $day++) {
+            $currentTime = strtotime($this->entryTime . ":00");
+            $exitTime = strtotime($this->exitTime . ":00");
+            $period = 1;
+
+            while ($currentTime < $exitTime) {
+                $startTimeStr = date('H:i:s', $currentTime);
+                
+                // Check if this time matches a break
+                $isBreak = false;
+                $breakName = null;
+                foreach ($this->breakTimes as $b) {
+                    if (date('H:i', $currentTime) === $b['start']) {
+                        $isBreak = true;
+                        $breakName = "Istirahat";
+                        $endTimeStr = date('H:i:s', strtotime($b['end'] . ":00"));
+                        break;
+                    }
+                }
+
+                if (!$isBreak) {
+                    $endTimeStr = date('H:i:s', strtotime("+{$this->periodDuration} minutes", $currentTime));
+                }
+
+                \App\Models\TimeSlot::create([
+                    'day' => $day,
+                    'start_time' => $startTimeStr,
+                    'end_time' => $endTimeStr,
+                    'is_break' => $isBreak,
+                    'name' => $isBreak ? $breakName : "Jam Ke-{$period}",
+                ]);
+
+                $currentTime = strtotime($endTimeStr);
+                if (!$isBreak) $period++;
+            }
+        }
+
+        $this->dispatch('notify', text: 'Time slots regenerated based on new school hours.', variant: 'success');
     }
 
     public function updatedActiveTab($value)

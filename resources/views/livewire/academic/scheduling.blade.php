@@ -28,12 +28,30 @@
                 </div>
             </x-ui.card>
 
+            <x-ui.card title="School Hours" description="Configure daily teaching periods.">
+                <div class="space-y-4">
+                    <flux:input wire:model="periodDuration" type="number" label="Duration per Period" suffix="mins" />
+                    <div class="grid grid-cols-2 gap-4">
+                        <flux:input wire:model="entryTime" type="time" label="Entry Time" />
+                        <flux:input wire:model="exitTime" type="time" label="Exit Time" />
+                    </div>
+
+                    <flux:button wire:click="regenerateTimeSlots" variant="ghost" class="w-full" wire:loading.attr="disabled">
+                        <flux:icon name="arrow-path" variant="mini" class="mr-2" wire:loading.remove wire:target="regenerateTimeSlots" />
+                        <flux:icon.loading class="mr-2" wire:loading wire:target="regenerateTimeSlots" />
+                        Regenerate Time Slots
+                    </flux:button>
+                </div>
+            </x-ui.card>
+
             <x-ui.card title="Global Constraints" description="Set default teaching hours per week.">
                 <div class="space-y-4">
                     <flux:input wire:model="globalMinHours" type="number" label="Global Min Hours" suffix="hrs/week" />
                     <flux:input wire:model="globalMaxHours" type="number" label="Global Max Hours" suffix="hrs/week" />
 
-                    <flux:button wire:click="saveGlobalRules" variant="filled" class="w-full">
+                    <flux:button wire:click="saveGlobalRules" variant="filled" class="w-full" wire:loading.attr="disabled">
+                        <flux:icon name="check-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="saveGlobalRules" />
+                        <flux:icon.loading class="mr-2" wire:loading wire:target="saveGlobalRules" />
                         Save Global Rules
                     </flux:button>
                 </div>
@@ -60,7 +78,9 @@
                     <div class="pt-4 flex items-center justify-between">
                         <flux:button wire:click="addBreakTime" variant="ghost" icon="plus" size="sm">Add Break
                         </flux:button>
-                        <flux:button wire:click="saveBreakTimes" variant="filled" size="sm" icon="check-circle">
+                        <flux:button wire:click="saveBreakTimes" variant="filled" size="sm" wire:loading.attr="disabled">
+                            <flux:icon name="check-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="saveBreakTimes" />
+                            <flux:icon.loading class="mr-2" wire:loading wire:target="saveBreakTimes" />
                             Save Breaks
                         </flux:button>
                     </div>
@@ -78,16 +98,22 @@
         <!-- Main Content -->
         <div class="lg:col-span-3">
             <div class="flex items-center gap-2 mb-6">
-                <flux:button wire:click="$set('activeTab', 'config')"
-                    :variant="$activeTab === 'config' ? 'primary' : 'ghost'" icon="cog-6-tooth">
+                <flux:button wire:click="$set('activeTab', 'config')" wire:loading.attr="disabled"
+                    :variant="$activeTab === 'config' ? 'primary' : 'ghost'">
+                    <flux:icon name="cog-6-tooth" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'config')" />
+                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'config')" />
                     Configuration
                 </flux:button>
-                <flux:button wire:click="$set('activeTab', 'simulate')"
-                    :variant="$activeTab === 'simulate' ? 'primary' : 'ghost'" icon="play-circle">
+                <flux:button wire:click="$set('activeTab', 'simulate')" wire:loading.attr="disabled"
+                    :variant="$activeTab === 'simulate' ? 'primary' : 'ghost'">
+                    <flux:icon name="play-circle" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'simulate')" />
+                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'simulate')" />
                     Simulation Results
                 </flux:button>
-                <flux:button wire:click="$set('activeTab', 'publish')"
-                    :variant="$activeTab === 'publish' ? 'primary' : 'ghost'" icon="cloud-arrow-up">
+                <flux:button wire:click="$set('activeTab', 'publish')" wire:loading.attr="disabled"
+                    :variant="$activeTab === 'publish' ? 'primary' : 'ghost'">
+                    <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" wire:loading.remove wire:target="$set('activeTab', 'publish')" />
+                    <flux:icon.loading class="mr-2" wire:loading wire:target="$set('activeTab', 'publish')" />
                     Publish & Approval
                 </flux:button>
             </div>
@@ -118,7 +144,11 @@
                                         <td class="px-4 py-3 text-right">
                                             <flux:button
                                                 wire:click="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})"
-                                                variant="ghost" size="sm" icon="pencil-square" tooltip="Override" />
+                                                wire:loading.attr="disabled"
+                                                variant="ghost" size="sm" tooltip="Override">
+                                                <flux:icon name="pencil-square" variant="mini" class="w-4 h-4" wire:loading.remove wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
+                                                <flux:icon.loading class="w-4 h-4" wire:loading wire:target="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" />
+                                            </flux:button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -159,8 +189,18 @@
                             </flux:select>
                         </div>
 
-                        <div class="overflow-x-auto overflow-y-auto max-h-[600px] border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                            <table class="w-full text-xs text-left min-w-max">
+                        <div class="relative overflow-hidden group">
+                            <!-- Loading Overlay for table updates -->
+                            <div wire:loading wire:target="previewFilterClass, previewFilterTeacher, generateSchedule"
+                                class="absolute inset-0 z-30 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-[2px] flex items-center justify-center">
+                                <div class="flex flex-col items-center gap-3 p-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-700">
+                                    <flux:icon.loading class="w-10 h-10 text-metronic-primary" />
+                                    <span class="text-sm font-bold text-zinc-900 dark:text-white">Updating Schedule...</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto overflow-y-auto max-h-[700px] border border-zinc-200 dark:border-zinc-800 rounded-lg style-scrollbar">
+                                <table class="w-full text-xs text-left min-w-max">
                                 <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-bold sticky top-0 z-10">
                                     <tr>
                                         <th class="px-4 py-3 min-w-[120px] border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 sticky left-0 z-20">Time</th>
@@ -255,7 +295,10 @@
                                     </p>
                                 </div>
                             </div>
-                            <flux:button wire:click="publishSchedule" variant="primary" class="w-full">Approve & Publish
+                            <flux:button wire:click="publishSchedule" variant="primary" class="w-full" wire:loading.attr="disabled">
+                                <flux:icon name="cloud-arrow-up" variant="mini" class="mr-2" wire:loading.remove wire:target="publishSchedule" />
+                                <flux:icon.loading class="mr-2" wire:loading wire:target="publishSchedule" />
+                                Approve & Publish
                             </flux:button>
                         </div>
 
@@ -269,7 +312,10 @@
                                     <p class="text-xs text-zinc-500">Prevent any further changes to the active schedule.</p>
                                 </div>
                             </div>
-                            <flux:button wire:click="lockSchedule" variant="filled" class="w-full">Finalize & Lock
+                            <flux:button wire:click="lockSchedule" variant="filled" class="w-full" wire:loading.attr="disabled">
+                                <flux:icon name="lock-closed" variant="mini" class="mr-2" wire:loading.remove wire:target="lockSchedule" />
+                                <flux:icon.loading class="mr-2" wire:loading wire:target="lockSchedule" />
+                                Finalize & Lock
                             </flux:button>
                         </div>
                     </div>
