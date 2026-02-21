@@ -54,27 +54,31 @@ class AcademicSeeder extends Seeder
 
         // 2. Subjects & Teachers data from image
         $data = [
-            ['code' => 'INF', 'name' => 'Informatika', 'teacher' => 'Moch. Safrudin', 'email' => 'safrudin@example.com', 'hours' => 3],
+            ['code' => 'INF', 'name' => 'Informatika', 'teacher' => 'Moch. Safrudin', 'email' => 'safrudin@example.com', 'hours' => 4],
             ['code' => 'GEO', 'name' => 'Geografi', 'teacher' => 'Ida Surtikanti', 'email' => 'ida@example.com', 'hours' => 2],
             ['code' => 'KIM', 'name' => 'Kimia', 'teacher' => 'Neneng Rohayati', 'email' => 'neneng@example.com', 'hours' => 3],
             ['code' => 'MAT', 'name' => 'Matematika', 'teacher' => 'Abdul Halim', 'email' => 'halim@example.com', 'hours' => 4],
             ['code' => 'SOS', 'name' => 'Sosiologi', 'teacher' => 'Uli Alba', 'email' => 'uli@example.com', 'hours' => 2],
             ['code' => 'EKO', 'name' => 'Ekonomi', 'teacher' => 'Moch. Gaponi', 'email' => 'gaponi@example.com', 'hours' => 3],
-            ['code' => 'OR', 'name' => 'Olahraga', 'teacher' => 'Lukman Firmasyah', 'email' => 'lukman@example.com', 'hours' => 2],
-            ['code' => 'BIG', 'name' => 'B. Inggris', 'teacher' => 'Fauzia Mariana', 'email' => 'fauzia@example.com', 'hours' => 3],
+            ['code' => 'OR', 'name' => 'Olahraga', 'teacher' => 'Lukman Firmasyah', 'email' => 'lukman@example.com', 'hours' => 3],
+            ['code' => 'BIG', 'name' => 'B. Inggris', 'teacher' => 'Fauzia Mariana', 'email' => 'fauzia@example.com', 'hours' => 2],
             ['code' => 'PPKN', 'name' => 'PPKN', 'teacher' => 'Darul Qutni', 'email' => 'darul@example.com', 'hours' => 2],
             ['code' => 'FIS', 'name' => 'Fisika', 'teacher' => 'Dhea Anggita', 'email' => 'dhea@example.com', 'hours' => 3],
-            ['code' => 'PAI', 'name' => 'PA. Islam', 'teacher' => 'Siti Mujilah', 'email' => 'siti@example.com', 'hours' => 2],
+            ['code' => 'PAI', 'name' => 'PA. Islam', 'teacher' => 'Siti Mujilah', 'email' => 'siti@example.com', 'hours' => 3],
             ['code' => 'BK', 'name' => 'BK/BP', 'teacher' => 'Erfi', 'email' => 'erfi@example.com', 'hours' => 1],
             ['code' => 'BIO', 'name' => 'Biologi', 'teacher' => 'Ninesti Handayani', 'email' => 'ninesti@example.com', 'hours' => 3],
-            ['code' => 'SEJ', 'name' => 'Sejarah', 'teacher' => 'Abdul Rozak', 'email' => 'rozak@example.com', 'hours' => 2],
-            ['code' => 'IND', 'name' => 'B. Indonesia', 'teacher' => 'Sartika', 'email' => 'sartika@example.com', 'hours' => 4],
+            ['code' => 'SEJ', 'name' => 'Sejarah', 'teacher' => 'Abdul Rozak', 'email' => 'rozak@example.com', 'hours' => 3],
+            ['code' => 'IND', 'name' => 'B. Indonesia', 'teacher' => 'Sartika', 'email' => 'sartika@example.com', 'hours' => 3],
             ['code' => 'SBK', 'name' => 'Seni Budaya', 'teacher' => 'Arini Camelia', 'email' => 'arini@example.com', 'hours' => 2],
         ];
 
         $subjectModels = [];
         $teacherModels = [];
+        $teacherIndex = 0;
+        $uniqueTeachers = [];
+
         foreach ($data as $d) {
+            // 1. Create Subject with unique name
             $subject = Subject::create([
                 'code' => $d['code'],
                 'name' => $d['name'],
@@ -82,28 +86,47 @@ class AcademicSeeder extends Seeder
             ]);
             $subjectModels[] = $subject;
 
-            $user = User::create([
-                'name' => $d['teacher'],
-                'email' => $d['email'],
-                'password' => bcrypt('password'),
-                'is_active' => true,
-            ]);
-            $user->syncRoles([$teacherRole->id]);
+            // 2. Check if we have already created this teacher
+            if (!isset($uniqueTeachers[$d['teacher']])) {
+                $user = User::create([
+                    'name' => $d['teacher'],
+                    'email' => $d['email'],
+                    'password' => bcrypt('password'),
+                    'is_active' => true,
+                ]);
+                $user->syncRoles([$teacherRole->id]);
 
-            $teacher = Teacher::create([
-                'user_id' => $user->id,
-                'nip' => '198' . rand(100000000, 999999999),
-                'name' => $user->name,
-            ]);
+                $teacher = Teacher::create([
+                    'user_id' => $user->id,
+                    'nip' => '198' . rand(100000000, 999999999),
+                    'name' => $user->name,
+                ]);
 
-            $teacher->config()->create([
-                'min_hours_per_week' => 18,
-                'max_hours_per_week' => 40,
-                'academic_year_id' => $ay->id,
-            ]);
+                $teacher->config()->create([
+                    'min_hours_per_week' => 18,
+                    'max_hours_per_week' => 40,
+                    'academic_year_id' => $ay->id,
+                ]);
 
-            $teacher->subjects()->attach($subject->id);
-            $teacherModels[$subject->id] = $teacher;
+                $uniqueTeachers[$d['teacher']] = $teacher;
+            }
+
+            $currentTeacher = $uniqueTeachers[$d['teacher']];
+            
+            // 3. Attach subject to teacher
+            // CRITICAL: Check how many subjects this teacher already has.
+            // If they already have 2, do NOT attach this new unique subject to them.
+            // Instead, this subject will just exist but might not have a teacher assigned 
+            // OR the seeder data already respects the "max 2" limit.
+            $assignedSubjectsCount = $currentTeacher->subjects()->count();
+            
+            if ($assignedSubjectsCount < 2) {
+                if (!$currentTeacher->subjects->contains($subject->id)) {
+                    $currentTeacher->subjects()->attach($subject->id);
+                }
+            }
+            
+            $teacherModels[$subject->id] = $currentTeacher;
         }
 
         // 3. Rooms

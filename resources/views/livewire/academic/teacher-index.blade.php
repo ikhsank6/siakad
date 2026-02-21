@@ -35,7 +35,7 @@
                         </x-ui.table.td>
                         <x-ui.table.td>
                             <div class="flex flex-wrap gap-1">
-                                @forelse($teacher->subjects as $subject)
+                                @forelse($teacher->subjects->unique('name') as $subject)
                                     <x-ui.badge variant="primary"
                                         class="text-[10px]! px-1.5! py-0.5!">{{ $subject->name }}</x-ui.badge>
                                 @empty
@@ -80,7 +80,7 @@
                                     <span class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Mata
                                         Pelajaran</span>
                                     <div class="flex flex-wrap gap-1">
-                                        @forelse($teacher->subjects as $subject)
+                                        @forelse($teacher->subjects->unique('name') as $subject)
                                             <x-ui.badge variant="neutral"
                                                 class="px-1.5! py-0! text-[10px]!">{{ $subject->name }}</x-ui.badge>
                                         @empty

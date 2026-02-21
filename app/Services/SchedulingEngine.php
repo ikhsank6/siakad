@@ -70,54 +70,124 @@ class SchedulingEngine
             $subjectId = $req->subject_id;
             $teacherId = $req->teacher_id;
 
-            // If teacher is not explicitly assigned, find an eligible teacher for the subject
             if (!$teacherId) {
                 $teacherId = $this->findTeacherForSubject($subjectId, $hoursNeeded);
             }
 
-            if (!$teacherId) {
-                // Could not find any teacher to accommodate this class
-                continue;
-            }
+            if (!$teacherId) continue;
 
-            for ($i = 0; $i < $hoursNeeded; $i++) {
-                $placed = false;
+            $remainingHours = $hoursNeeded;
+            
+            // Try to place hours in blocks
+            // For block scheduling, we prefer fewer, longer sessions
+            // If hours <= 4, try to place in 1 block.
+            // If hours > 4, maybe 2 blocks.
+            $maxBlockSize = min($remainingHours, 4); // Max 4 consecutive hours per block for variety
+            
+            // Shuffle days to distribute subjects across the week
+            $dayOrder = [1, 2, 3, 4, 5, 6];
+            shuffle($dayOrder);
+
+            foreach ($dayOrder as $day) {
+                if ($remainingHours <= 0) break;
+
+                $daySlots = $this->timeSlots->where('day', $day)->where('is_break', false)->values();
+                if ($daySlots->isEmpty()) continue;
+
+                // Subjects already in this day for this class
+                $subjectsInDayIds = collect($scheduledItems)
+                    ->where('class_id', $classId)
+                    ->where('day', $day)
+                    ->pluck('subject_id')
+                    ->unique();
                 
-                // Shuffle time slots to get varied distribution
-                $availableSlots = $this->timeSlots->where('is_break', false)->shuffle();
+                $subjectsInDayCount = $subjectsInDayIds->count();
 
-                foreach ($availableSlots as $slot) {
-                    // Check room availability
-                    $roomId = $this->findAvailableRoom($slot->id, $classId);
+                // If this subject is already in this day, we can continue adding to it (though rare in block scheduling)
+                // or if we reached the limit of 3-4 subjects per day, stop.
+                if ($subjectsInDayCount >= 4 && !$subjectsInDayIds->contains($subjectId)) continue; 
 
-                    if ($roomId && $this->isAvailable($teacherId, $classId, $slot->id)) {
-                        $scheduledItems[] = [
-                            'uuid' => (string) \Illuminate\Support\Str::uuid(),
-                            'academic_year_id' => $this->academicYear->id,
-                            'class_id' => $classId,
-                            'subject_id' => $subjectId,
-                            'teacher_id' => $teacherId,
-                            'room_id' => $roomId,
-                            'time_slot_id' => $slot->id,
-                            'day' => $slot->day,
-                            'status' => 'draft',
-                            'created_by' => Auth::check() ? Auth::user()->name : 'System',
-                            'updated_by' => Auth::check() ? Auth::user()->name : 'System',
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-                        $placed = true;
+                // Target size: ideally the entire remaining hours for this subject
+                // but capped at a sensible day-limit (e.g. 5 hours)
+                $maxPossibleInThisDay = min($remainingHours, 5);
+                
+                for ($size = $maxPossibleInThisDay; $size >= 2; $size--) {
+                    $foundBlock = false;
+                    
+                    // Shuffle starting indices to vary when subjects start in the day
+                    $possibleStarts = range(0, $daySlots->count() - $size);
+                    shuffle($possibleStarts);
+
+                    foreach ($possibleStarts as $slotIdx) {
+                        $potentialSlots = $daySlots->slice($slotIdx, $size);
                         
-                        // Track usage locally for faster checks
-                        $this->markAsBusy($teacherId, $classId, $roomId, $slot->id);
-                        break;
-                    }
-                }
+                        $blockAvailable = true;
+                        $roomForBlock = null;
 
-                if (!$placed) {
-                    // Handle failure to place a slot
-                    // Log or throw warning
+                        foreach ($potentialSlots as $slot) {
+                            $foundRoom = $this->findAvailableRoom($slot->id, $classId);
+                            if (!$foundRoom || !$this->isAvailable($teacherId, $classId, $slot->id)) {
+                                $blockAvailable = false;
+                                break;
+                            }
+                            $roomForBlock = $foundRoom;
+                        }
+
+                        if ($blockAvailable) {
+                            foreach ($potentialSlots as $slot) {
+                                $scheduledItems[] = [
+                                    'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                                    'academic_year_id' => $this->academicYear->id,
+                                    'class_id' => $classId,
+                                    'subject_id' => $subjectId,
+                                    'teacher_id' => $teacherId,
+                                    'room_id' => $roomForBlock,
+                                    'time_slot_id' => $slot->id,
+                                    'day' => $slot->day,
+                                    'status' => 'draft',
+                                    'created_by' => Auth::check() ? Auth::user()->name : 'System',
+                                    'updated_by' => Auth::check() ? Auth::user()->name : 'System',
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                                $this->markAsBusy($teacherId, $classId, $roomForBlock, $slot->id);
+                            }
+                            $remainingHours -= $size;
+                            $foundBlock = true;
+                            break;
+                        }
+                    }
+                    if ($foundBlock) break; 
                 }
+            }
+            
+            // Fallback: If still has remaining hours, try placing in smaller pieces (singular slots)
+            if ($remainingHours > 0) {
+                 $availableSlots = $this->timeSlots->where('is_break', false)->shuffle();
+                 foreach ($availableSlots as $slot) {
+                     if ($remainingHours <= 0) break;
+                     $roomId = $this->findAvailableRoom($slot->id, $classId);
+                     if ($roomId && $this->isAvailable($teacherId, $classId, $slot->id)) {
+                         $scheduledItems[] = [
+                             // ... singular placement ...
+                             'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                             'academic_year_id' => $this->academicYear->id,
+                             'class_id' => $classId,
+                             'subject_id' => $subjectId,
+                             'teacher_id' => $teacherId,
+                             'room_id' => $roomId,
+                             'time_slot_id' => $slot->id,
+                             'day' => $slot->day,
+                             'status' => 'draft',
+                             'created_by' => Auth::check() ? Auth::user()->name : 'System',
+                             'updated_by' => Auth::check() ? Auth::user()->name : 'System',
+                             'created_at' => now(),
+                             'updated_at' => now(),
+                         ];
+                         $this->markAsBusy($teacherId, $classId, $roomId, $slot->id);
+                         $remainingHours--;
+                     }
+                 }
             }
         }
 
