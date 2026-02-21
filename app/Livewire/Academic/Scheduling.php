@@ -24,7 +24,14 @@ class Scheduling extends Component
     public $useDynamicRooms = false;
     public $periodDuration = 45;
     public $entryTime = '07:00';
-    public $exitTime = '15:30';
+    public $exitTime = '13:30';
+    public $daySpecificConfig = [
+        1 => ['entry' => '07:00', 'exit' => '13:30'],
+        2 => ['entry' => '07:00', 'exit' => '13:30'],
+        3 => ['entry' => '07:00', 'exit' => '13:30'],
+        4 => ['entry' => '07:00', 'exit' => '13:30'],
+        5 => ['entry' => '07:00', 'exit' => '11:00'], // Jumat lebih awal
+    ];
     public $breakTimes = []; // [['start' => '09:15', 'end' => '10:00']]
 
     public $showOverrideModal = false;
@@ -128,44 +135,42 @@ class Scheduling extends Component
     {
         \App\Models\TimeSlot::truncate();
 
-        for ($day = 1; $day <= 6; $day++) {
-            $currentTime = strtotime($this->entryTime . ":00");
-            $exitTime = strtotime($this->exitTime . ":00");
-            $period = 1;
+        foreach ($this->days as $dayNum => $dayName) {
+            $config = $this->daySpecificConfig[$dayNum] ?? ['entry' => $this->entryTime, 'exit' => $this->exitTime];
+            $currentStartTime = \Carbon\Carbon::createFromFormat('H:i', $config['entry']);
+            $finalExitTime = \Carbon\Carbon::createFromFormat('H:i', $config['exit']);
 
-            while ($currentTime < $exitTime) {
-                $startTimeStr = date('H:i:s', $currentTime);
+            while ($currentStartTime->copy()->addMinutes($this->periodDuration)->lte($finalExitTime)) {
+                $endTime = $currentStartTime->copy()->addMinutes($this->periodDuration);
                 
-                // Check if this time matches a break
+                // Check if this slot overlaps with any break
                 $isBreak = false;
                 $breakName = null;
-                foreach ($this->breakTimes as $b) {
-                    if (date('H:i', $currentTime) === $b['start']) {
+                foreach ($this->breakTimes as $break) {
+                    $bStart = \Carbon\Carbon::createFromFormat('H:i', $break['start']);
+                    $bEnd = \Carbon\Carbon::createFromFormat('H:i', $break['end']);
+                    
+                    if ($currentStartTime->between($bStart, $bEnd, false) || $endTime->between($bStart, $bEnd, false)) {
                         $isBreak = true;
-                        $breakName = "Istirahat";
-                        $endTimeStr = date('H:i:s', strtotime($b['end'] . ":00"));
+                        $breakName = $break['name'] ?? 'Istirahat';
                         break;
                     }
                 }
 
-                if (!$isBreak) {
-                    $endTimeStr = date('H:i:s', strtotime("+{$this->periodDuration} minutes", $currentTime));
-                }
-
                 \App\Models\TimeSlot::create([
-                    'day' => $day,
-                    'start_time' => $startTimeStr,
-                    'end_time' => $endTimeStr,
+                    'day' => $dayNum,
+                    'start_time' => $currentStartTime->format('H:i:s'),
+                    'end_time' => $endTime->format('H:i:s'),
                     'is_break' => $isBreak,
-                    'name' => $isBreak ? $breakName : "Jam Ke-{$period}",
+                    'name' => $isBreak ? $breakName : "Jam Ke",
                 ]);
 
-                $currentTime = strtotime($endTimeStr);
-                if (!$isBreak) $period++;
+                $currentStartTime->addMinutes($this->periodDuration);
             }
         }
 
-        $this->dispatch('notify', text: 'Time slots regenerated based on new school hours.', variant: 'success');
+        $this->activeTab = 'config';
+        $this->dispatch('notify', text: 'Time slots regenerated based on day-specific config.', variant: 'success');
     }
 
     public function updatedActiveTab($value)
@@ -246,24 +251,78 @@ class Scheduling extends Component
 
             $drafts = $query->orderBy('day')->orderBy('time_slot_id')->get();
             $allTimeSlots = \App\Models\TimeSlot::orderBy('start_time')->get();
-            
-            // Group time slots by time range
-            $timeSlots = $allTimeSlots->groupBy(function($slot) {
+            $uniqueTimeRanges = $allTimeSlots->groupBy(function($slot) {
                 return substr($slot->start_time, 0, 5) . '-' . substr($slot->end_time, 0, 5);
-            });
+            })->keys()->toArray();
 
-            // Structure data: $calendarData[day][time_key] = [schedules...]
+            // Structure data: $calendarData[day] = [blocks...]
+            // We'll use Monday (day 1) as reference for time slots structure
+            $refSlots = \App\Models\TimeSlot::where('day', 1)->orderBy('start_time')->get();
+            
             foreach ($days as $dayNum => $dayName) {
                 $calendarData[$dayNum] = [];
-                foreach ($timeSlots as $timeKey => $slotsInGroup) {
-                    $slotIds = $slotsInGroup->pluck('id')->toArray();
-                    $calendarData[$dayNum][$timeKey] = [
-                        'items' => $drafts->where('day', $dayNum)->whereIn('time_slot_id', $slotIds),
-                        'is_break' => $slotsInGroup->first()->is_break,
-                        'name' => $slotsInGroup->first()->name,
-                        'start_time' => $slotsInGroup->first()->start_time,
-                        'end_time' => $slotsInGroup->first()->end_time,
+                $processedIndices = [];
+                $daySlots = \App\Models\TimeSlot::where('day', $dayNum)->orderBy('start_time')->get()->values();
+                $breakCount = 0;
+
+                for ($i = 0; $i < $daySlots->count(); $i++) {
+                    if (in_array($i, $processedIndices)) continue;
+
+                    $currentSlot = $daySlots[$i];
+                    $items = $drafts->where('day', $dayNum)->where('time_slot_id', $currentSlot->id);
+
+                    if ($currentSlot->is_break) {
+                        $breakCount++;
+                        $span = 1;
+                        for ($j = $i + 1; $j < $daySlots->count(); $j++) {
+                            if ($daySlots[$j]->is_break) {
+                                $span++;
+                                $processedIndices[] = $j;
+                            } else { break; }
+                        }
+                        $calendarData[$dayNum][] = [
+                            'type' => 'break',
+                            'name' => 'Istirahat ' . $breakCount,
+                            'span' => $span
+                        ];
+                        $processedIndices[] = $i;
+                        continue;
+                    }
+
+                    if ($items->isEmpty()) {
+                        $calendarData[$dayNum][] = [
+                            'type' => 'empty',
+                            'span' => 1
+                        ];
+                        $processedIndices[] = $i;
+                        continue;
+                    }
+
+                    $span = 1;
+                    if ($items->count() === 1) {
+                        $item = $items->first();
+                        for ($j = $i + 1; $j < $daySlots->count(); $j++) {
+                            $nextSlot = $daySlots[$j];
+                            if ($nextSlot->is_break) break;
+                            $nextItems = $drafts->where('day', $dayNum)->where('time_slot_id', $nextSlot->id);
+                            if ($nextItems->count() === 1) {
+                                $nextItem = $nextItems->first();
+                                if ($nextItem->subject_id === $item->subject_id && 
+                                    $nextItem->class_id === $item->class_id &&
+                                    $nextItem->teacher_id === $item->teacher_id) {
+                                    $span++;
+                                    $processedIndices[] = $j;
+                                } else { break; }
+                            } else { break; }
+                        }
+                    }
+
+                    $calendarData[$dayNum][] = [
+                        'type' => 'subject',
+                        'items' => $items,
+                        'span' => $span
                     ];
+                    $processedIndices[] = $i;
                 }
             }
         }
