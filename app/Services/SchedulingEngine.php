@@ -142,16 +142,11 @@ class SchedulingEngine
         $this->busyRooms = [];    // [slot_id => [room_ids]]
 
         // Map classes to fixed rooms if not using dynamic rooms
+        $this->classRoomMap = [];
         if (!$this->useDynamicRooms) {
-            $this->classRoomMap = [];
-            foreach ($this->classes as $index => $class) {
-                // simple 1 to 1 assignment
-                $room = $this->rooms->get($index);
-                if ($room) {
-                    $this->classRoomMap[$class->id] = $room->id;
-                } else {
-                    // Fallback to a random room if there are more classes than rooms
-                    $this->classRoomMap[$class->id] = $this->rooms->random()->id;
+            foreach ($this->classes as $class) {
+                if ($class->room_id) {
+                    $this->classRoomMap[$class->id] = $class->room_id;
                 }
             }
         }
@@ -194,22 +189,27 @@ class SchedulingEngine
 
     protected function findAvailableRoom($slotId, $classId)
     {
+        // 1. If not dynamic, try the assigned room first
         if (!$this->useDynamicRooms && isset($this->classRoomMap[$classId])) {
             $roomId = $this->classRoomMap[$classId];
             
-            // Still check if the room is busy by another class to avoid collisions if fallbacks were made
             if (!isset($this->busyRooms[$slotId]) || !in_array($roomId, $this->busyRooms[$slotId])) {
                  return $roomId;
             }
         }
 
-        // Logical path for dynamic rooms or if fixed room is busy: find any available room
-        foreach ($this->rooms as $room) {
-            if (!isset($this->busyRooms[$slotId]) || !in_array($room->id, $this->busyRooms[$slotId])) {
-                return $room->id;
-            }
-        }
-        return null;
+        // 2. Dynamic path: find any available room
+        $availableRooms = $this->rooms->filter(function($room) use ($slotId) {
+            return !isset($this->busyRooms[$slotId]) || !in_array($room->id, $this->busyRooms[$slotId]);
+        });
+
+        if ($availableRooms->isEmpty()) return null;
+
+        // If useDynamicRooms is true, pick randomly to distribute load
+        // If false, pick the first one as fallback
+        return $this->useDynamicRooms 
+            ? $availableRooms->random()->id 
+            : $availableRooms->first()->id;
     }
 
     protected function isAvailable($teacherId, $classId, $slotId)

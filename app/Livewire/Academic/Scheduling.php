@@ -22,6 +22,7 @@ class Scheduling extends Component
     public $globalMaxHours = 24;
     public $activeTab = 'config'; // config, simulate, publish
     public $useDynamicRooms = false;
+    public $breakTimes = []; // [['start' => '09:15', 'end' => '10:00']]
 
     public $showOverrideModal = false;
     public $editingTeacherId = null;
@@ -56,6 +57,7 @@ class Scheduling extends Component
         if ($activeYear) {
             $this->activeYearId = $activeYear->id;
             $this->loadRules();
+            $this->loadBreakTimes();
         }
     }
 
@@ -67,6 +69,56 @@ class Scheduling extends Component
 
         if ($min) $this->globalMinHours = $min->value;
         if ($max) $this->globalMaxHours = $max->value;
+    }
+
+    public function loadBreakTimes()
+    {
+        // For simplicity, we assume breaks are the same across all days
+        // We get unique break time ranges from Monday
+        $breaks = \App\Models\TimeSlot::where('day', 1)
+            ->where('is_break', true)
+            ->orderBy('start_time')
+            ->get();
+
+        $this->breakTimes = $breaks->map(function ($slot) {
+            return [
+                'start' => substr($slot->start_time, 0, 5),
+                'end' => substr($slot->end_time, 0, 5),
+            ];
+        })->toArray();
+
+        if (empty($this->breakTimes)) {
+            $this->breakTimes = [['start' => '09:15', 'end' => '10:00']];
+        }
+    }
+
+    public function addBreakTime()
+    {
+        $this->breakTimes[] = ['start' => '', 'end' => ''];
+    }
+
+    public function removeBreakTime($index)
+    {
+        unset($this->breakTimes[$index]);
+        $this->breakTimes = array_values($this->breakTimes);
+    }
+
+    public function saveBreakTimes()
+    {
+        // Update all TimeSlots across all days
+        // First, reset all is_break to false
+        \App\Models\TimeSlot::query()->update(['is_break' => false]);
+
+        foreach ($this->breakTimes as $break) {
+            if (empty($break['start']) || empty($break['end'])) continue;
+
+            // Mark slots that exactly match or overlap
+            \App\Models\TimeSlot::where('start_time', '>=', $break['start'] . ':00')
+                ->where('end_time', '<=', $break['end'] . ':00')
+                ->update(['is_break' => true]);
+        }
+
+        $this->dispatch('notify', text: 'Break times updated successfully.', variant: 'success');
     }
 
     public function updatedActiveTab($value)
@@ -174,7 +226,7 @@ class Scheduling extends Component
             'teachers' => Teacher::with(['config' => function($q) {
                 $q->where('academic_year_id', $this->activeYearId);
             }])->get(),
-            'classes' => \App\Models\AcademicClass::where('academic_year_id', $this->activeYearId)->get(),
+            'classes' => \App\Models\AcademicClass::all(),
             'draftSchedules' => $drafts,
             'calendarData' => $calendarData,
             'timeSlots' => $timeSlots,

@@ -38,6 +38,41 @@
                     </flux:button>
                 </div>
             </x-ui.card>
+
+            <!-- Break Times -->
+            <x-ui.card title="Break Periods" description="Set times when no classes can be scheduled.">
+                <div class="space-y-4">
+                    @foreach($breakTimes as $index => $break)
+                        <div class="flex items-center gap-2 group">
+                            <div class="flex-1 grid grid-cols-2 gap-2">
+                                <flux:input wire:model="breakTimes.{{ $index }}.start" type="time"
+                                    label="{{ $index === 0 ? 'Start Time' : '' }}" />
+                                <flux:input wire:model="breakTimes.{{ $index }}.end" type="time"
+                                    label="{{ $index === 0 ? 'End Time' : '' }}" />
+                            </div>
+                            <div class="{{ $index === 0 ? 'pt-6' : '' }}">
+                                <flux:button wire:click="removeBreakTime({{ $index }})" variant="ghost" icon="trash"
+                                    size="sm" class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                        </div>
+                    @endforeach
+
+                    <div class="pt-4 flex items-center justify-between">
+                        <flux:button wire:click="addBreakTime" variant="ghost" icon="plus" size="sm">Add Break
+                        </flux:button>
+                        <flux:button wire:click="saveBreakTimes" variant="filled" size="sm" icon="check-circle">
+                            Save Breaks
+                        </flux:button>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg">
+                        <p class="text-[9px] text-amber-700 dark:text-amber-400">
+                            <flux:icon.information-circle class="w-3 h-3 inline mr-1" />
+                            Breaks apply to all days (Mon-Sat).
+                        </p>
+                    </div>
+                </div>
+            </x-ui.card>
         </div>
 
         <!-- Main Content -->
@@ -58,6 +93,7 @@
             </div>
 
             @if($activeTab === 'config')
+                <!-- Teacher Overrides -->
                 <x-ui.card title="Teacher Overrides" description="Set custom teaching hour limits for specific teachers.">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -80,7 +116,9 @@
                                             {{ $teacher->config->max_hours_per_week ?? 'Global' }}
                                         </td>
                                         <td class="px-4 py-3 text-right">
-                                            <flux:button wire:click="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})" variant="ghost" size="sm" icon="pencil-square" tooltip="Override" />
+                                            <flux:button
+                                                wire:click="editTeacher({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', {{ $teacher->config->min_hours_per_week ?? 'null' }}, {{ $teacher->config->max_hours_per_week ?? 'null' }})"
+                                                variant="ghost" size="sm" icon="pencil-square" tooltip="Override" />
                                         </td>
                                     </tr>
                                 @endforeach
@@ -88,14 +126,14 @@
                         </table>
                     </div>
                 </x-ui.card>
-                
+
                 <x-ui.modal wire:model="showOverrideModal" title="Override Teaching Hours" formId="teacher-override-form">
                     <form wire:submit="saveTeacherConfig" id="teacher-override-form" class="space-y-4" novalidate>
                         <div class="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                             <span class="text-xs text-zinc-500 block">Teacher</span>
                             <span class="font-bold text-zinc-900 dark:text-white">{{ $editingTeacherName }}</span>
                         </div>
-                        
+
                         <flux:input wire:model="editingMinHours" type="number" label="Minimum Hours" suffix="hrs/week" />
                         <flux:input wire:model="editingMaxHours" type="number" label="Maximum Hours" suffix="hrs/week" />
                     </form>
@@ -122,7 +160,7 @@
                         </div>
 
                         <div class="overflow-x-auto overflow-y-auto max-h-[600px] border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                            <table class="w-full text-xs text-left min-w-[max-content]">
+                            <table class="w-full text-xs text-left min-w-max">
                                 <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-bold sticky top-0 z-10">
                                     <tr>
                                         <th class="px-4 py-3 min-w-[120px] border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 sticky left-0 z-20">Time</th>
@@ -134,7 +172,7 @@
                                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                                     @foreach($timeSlots as $timeKey => $slotsInGroup)
                                         @php
-                                            $firstSlotData = $calendarData[1][$timeKey] ?? null;
+                                            $firstSlotData = (array) ($calendarData[1][$timeKey] ?? []);
                                         @endphp
                                         <tr>
                                             <td class="px-4 py-3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky left-0 shadow-[2px_0_5px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-10">
@@ -144,31 +182,38 @@
                                             
                                             @foreach($days as $dayNum => $dayName)
                                                 @php
-                                                    $cellData = $calendarData[$dayNum][$timeKey] ?? ['items' => collect(), 'is_break' => false, 'name' => ''];
-                                                    $items = $cellData['items'];
+                                                    $cellData = (array) ($calendarData[$dayNum][$timeKey] ?? ['items' => collect(), 'is_break' => false, 'name' => '']);
+                                                    $items = $cellData['items'] ?? collect();
                                                 @endphp
-                                                <td class="px-4 py-3 h-24 align-top w-[220px] border-l border-zinc-200 dark:border-zinc-800 relative bg-zinc-50/30 dark:bg-zinc-800/20">
-                                                    @if($cellData['is_break'])
+                                                <td class="px-5 py-4 h-32 align-top min-w-[320px] border-l border-zinc-200 dark:border-zinc-800 relative bg-zinc-50/30 dark:bg-zinc-800/20">
+                                                    @if($cellData['is_break'] ?? false)
                                                         <div class="absolute inset-0 flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-800/80">
                                                             <span class="text-zinc-400 font-bold uppercase tracking-widest opacity-50">{{ $cellData['name'] }}</span>
                                                         </div>
                                                     @else
-                                                        <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[450px]">
+                                                        <div class="flex flex-col gap-3">
                                                             @foreach($items as $item)
-                                                                <div class="p-2 rounded-md border text-left
+                                                                <div class="p-3 rounded-xl border text-left transition-all hover:shadow-md
                                                                     {{ $previewFilterClass ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800/50' : 'bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700' }} shadow-sm">
                                                                     
-                                                                    <div class="font-bold text-zinc-800 dark:text-zinc-200 truncate text-[11px]" title="{{ $item->subject->name }}">
+                                                                    <div class="font-bold text-zinc-900 dark:text-zinc-100 truncate text-xs" title="{{ $item->subject->name }}">
                                                                         {{ $item->subject->name }}
                                                                     </div>
                                                                     
-                                                                    <div class="mt-1 flex items-center justify-between gap-1 text-[9px] text-zinc-500">
+                                                                    <div class="mt-1 flex items-center gap-2 text-[10px] text-zinc-500">
+                                                                        <flux:icon.user class="w-2.5 h-2.5" />
                                                                         <span class="font-medium truncate" title="{{ $item->teacher->name }}">{{ $item->teacher->name }}</span>
                                                                     </div>
- 
-                                                                    <div class="mt-1 flex items-center gap-1">
-                                                                        <x-ui.badge variant="success" class="!px-1 !py-0 text-[8px]! truncate max-w-[50%]">{{ $item->room->name }}</x-ui.badge>
-                                                                        <x-ui.badge variant="primary" class="!px-1 !py-0 text-[8px]! truncate max-w-[50%]">{{ $item->academicClass->name }}</x-ui.badge>
+
+                                                                    <div class="mt-2 flex items-center gap-2">
+                                                                        <x-ui.badge variant="success" class="px-2! py-0.5! text-[10px]! font-bold">
+                                                                            <flux:icon.building-library class="w-2 h-2 mr-1 inline" />
+                                                                            {{ $item->room->name }}
+                                                                        </x-ui.badge>
+                                                                        <x-ui.badge variant="primary" class="px-2! py-0.5! text-[10px]! font-bold">
+                                                                            <flux:icon.users class="w-2 h-2 mr-1 inline" />
+                                                                            {{ $item->academicClass->name }}
+                                                                        </x-ui.badge>
                                                                     </div>
                                                                 </div>
                                                             @endforeach
