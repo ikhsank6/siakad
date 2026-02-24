@@ -202,7 +202,34 @@
                         <flux:input wire:model="editingMaxHours" type="number" label="Maximum Hours" suffix="hrs/week" />
                     </form>
                 </x-ui.modal>
+
             @endif
+
+            <!-- Manual Schedule Modal -->
+            <x-ui.modal wire:model="showManualModal" :title="$editingScheduleId ? 'Edit Schedule' : 'Manual Entry'"
+                formId="manual-schedule-form">
+                <form wire:submit="saveManualSchedule" id="manual-schedule-form" class="space-y-4">
+                    {{ $this->form }}
+
+                    @if($editingScheduleId)
+                        <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                            <flux:button wire:click="deleteSchedule({{ $editingScheduleId }})" variant="danger"
+                                class="w-full" wire:loading.attr="disabled">
+                                <flux:icon.loading class="mr-2" wire:loading wire:target="deleteSchedule" />
+                                Delete Schedule
+                            </flux:button>
+                        </div>
+                    @endif
+                </form>
+
+                <x-slot name="footer">
+                    <flux:button variant="ghost" @click="show = false">Cancel</flux:button>
+                    <flux:button type="submit" form="manual-schedule-form" variant="primary">
+                        <flux:icon.loading class="mr-2" wire:loading wire:target="saveManualSchedule" />
+                        {{ $editingScheduleId ? 'Save Changes' : 'Add to Schedule' }}
+                    </flux:button>
+                </x-slot>
+            </x-ui.modal>
 
             @if($activeTab === 'simulate')
                 <x-ui.card title="Draft Preview" description="Preview of generated schedules before publishing.">
@@ -210,7 +237,7 @@
                         <div class="mb-6 flex flex-col sm:flex-row gap-4">
                             <flux:select wire:model.live="previewFilterClass" placeholder="Filter by Class" class="flex-1">
                                 <flux:select.option value="">All Classes</flux:select.option>
-                                @foreach($classes ?? collect() as $c)
+                                @foreach($classList ?? collect() as $c)
                                     <flux:select.option value="{{ $c->id }}">{{ $c->name }}</flux:select.option>
                                 @endforeach
                             </flux:select>
@@ -287,8 +314,12 @@
                                                         @elseif($block['type'] === 'subject')
                                                             <div class="flex flex-col gap-1.5 h-full">
                                                                 @foreach($block['items'] as $item)
-                                                                    <div
-                                                                        class="p-2 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                                                                    <div wire:click="openEditModal({{ $item->id }})"
+                                                                        class="p-2 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm cursor-pointer hover:border-metronic-primary transition-all group relative">
+                                                                        <div wire:loading wire:target="openEditModal({{ $item->id }})"
+                                                                            class="absolute inset-0 z-10 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-[1px] flex items-center justify-center rounded-lg">
+                                                                            <flux:icon.loading class="w-4 h-4 text-metronic-primary" />
+                                                                        </div>
                                                                         <div
                                                                             class="font-bold text-zinc-900 dark:text-zinc-100 text-[11px] leading-tight mb-1">
                                                                             {{ $item->subject->name }}
@@ -298,12 +329,22 @@
                                                                         </div>
                                                                         <div class="flex gap-1 justify-center">
                                                                             <span
-                                                                                class="px-1 py-0.5 rounded bg-green-50 text-green-700 border border-green-100 text-[8px] font-bold">R.{{ preg_replace('/[^0-9]/', '', $item->room->name) ?: $item->room->name }}</span>
+                                                                                class="px-1 py-0.5 rounded bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800 text-[8px] font-bold">R.{{ preg_replace('/[^0-9]/', '', $item->room->name) ?: $item->room->name }}</span>
                                                                             <span
-                                                                                class="px-1 py-0.5 rounded bg-zinc-50 text-zinc-600 border border-zinc-100 text-[8px] font-bold">{{ $item->academicClass->name }}</span>
+                                                                                class="px-1 py-0.5 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-700 text-[8px] font-bold">{{ $item->academicClass->name }}</span>
                                                                         </div>
                                                                     </div>
                                                                 @endforeach
+                                                            </div>
+                                                        @elseif($block['type'] === 'empty')
+                                                            <div wire:click="openAddModal({{ $block['id'] }})"
+                                                                class="w-full h-full min-h-[100px] cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/20 group flex items-center justify-center transition-colors relative">
+                                                                <div wire:loading wire:target="openAddModal({{ $block['id'] }})"
+                                                                    class="absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/40 dark:bg-zinc-800/20">
+                                                                    <flux:icon.loading class="w-4 h-4 text-metronic-primary" />
+                                                                </div>
+                                                                <flux:icon.plus
+                                                                    class="w-4 h-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                             </div>
                                                         @endif
                                                     </td>
@@ -384,7 +425,7 @@
                             <div class="mb-6 flex flex-col sm:flex-row gap-4">
                                 <flux:select wire:model.live="previewFilterClass" placeholder="Filter by Class" class="flex-1">
                                     <flux:select.option value="">All Classes</flux:select.option>
-                                    @foreach($classes ?? collect() as $c)
+                                    @foreach($classList ?? collect() as $c)
                                         <flux:select.option value="{{ $c->id }}">{{ $c->name }}</flux:select.option>
                                     @endforeach
                                 </flux:select>

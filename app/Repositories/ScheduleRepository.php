@@ -81,4 +81,21 @@ class ScheduleRepository extends BaseRepository implements ScheduleRepositoryInt
 
         return $query->get();
     }
+
+    public function getSchedulesWithRelations(int $academicYearId, array $status, array $filters = []): \Illuminate\Support\Collection
+    {
+        $query = $this->model->with(['academicClass', 'teacher', 'subject', 'room', 'timeSlot'])
+            ->where('academic_year_id', $academicYearId)
+            ->whereIn('status', $status);
+
+        if (!empty($filters['class_id'])) {
+            $query->where('class_id', $filters['class_id']);
+        }
+
+        if (!empty($filters['teacher_id'])) {
+            $query->where('teacher_id', $filters['teacher_id']);
+        }
+
+        return $query->get();
+    }
 }

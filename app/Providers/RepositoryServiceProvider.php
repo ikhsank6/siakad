@@ -48,6 +48,7 @@ class RepositoryServiceProvider extends ServiceProvider
         \App\Repositories\Contracts\StudentRepositoryInterface::class => \App\Repositories\StudentRepository::class,
         \App\Repositories\Contracts\RoomRepositoryInterface::class => \App\Repositories\RoomRepository::class,
         \App\Repositories\Contracts\AcademicClassRepositoryInterface::class => \App\Repositories\AcademicClassRepository::class,
+        \App\Repositories\Contracts\TimeSlotRepositoryInterface::class => \App\Repositories\TimeSlotRepository::class,
     ];
 
     /**

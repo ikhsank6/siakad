@@ -59,4 +59,22 @@ class TeacherRepository extends BaseRepository implements TeacherRepositoryInter
     {
         return $this->findOneBy(['user_id' => $userId]);
     }
+
+    public function getTeachersBySubject($subjectId): \Illuminate\Support\Collection
+    {
+        if (! $subjectId) return collect();
+
+        return $this->model->query()
+            ->whereHas('subjects', function ($query) use ($subjectId) {
+                $query->where('subjects.id', $subjectId);
+            })
+            ->pluck('name', 'id');
+    }
+
+    public function getTeachersWithConfig(int $academicYearId): \Illuminate\Support\Collection
+    {
+        return $this->model->with(['config' => function($q) use ($academicYearId) {
+            $q->where('academic_year_id', $academicYearId);
+        }])->get();
+    }
 }

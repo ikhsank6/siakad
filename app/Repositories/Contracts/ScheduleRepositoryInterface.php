@@ -35,4 +35,5 @@ interface ScheduleRepositoryInterface extends RepositoryInterface
      * Get filtered schedules.
      */
     public function getFilteredSchedules(int $academicYearId, array $filters = []): \Illuminate\Support\Collection;
+    public function getSchedulesWithRelations(int $academicYearId, array $status, array $filters = []): \Illuminate\Support\Collection;
 }

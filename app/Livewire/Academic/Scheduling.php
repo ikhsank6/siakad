@@ -2,21 +2,28 @@
 
 namespace App\Livewire\Academic;
 
-use App\Models\AcademicYear;
-use App\Models\Teacher;
 use App\Repositories\Contracts\AcademicYearRepositoryInterface;
 use App\Repositories\Contracts\ScheduleRepositoryInterface;
 use App\Repositories\Contracts\ScheduleRuleRepositoryInterface;
 use App\Repositories\Contracts\TeacherRepositoryInterface;
+use App\Repositories\Contracts\AcademicClassRepositoryInterface;
+use App\Repositories\Contracts\SubjectRepositoryInterface;
+use App\Repositories\Contracts\RoomRepositoryInterface;
+use App\Repositories\Contracts\TimeSlotRepositoryInterface;
 use App\Services\SchedulingEngine;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Get;
 #[Layout('components.layouts.app')]
 #[Title('Auto Scheduling')]
-class Scheduling extends Component
+class Scheduling extends Component implements HasForms
 {
+    use InteractsWithForms;
     public $activeYearId;
     public $globalMinHours = 18;
     public $globalMaxHours = 24;
@@ -45,22 +52,48 @@ class Scheduling extends Component
     public $previewFilterClass = null;
     public $previewFilterTeacher = null;
 
+    // Manual Entry
+    public $showManualModal = false;
+    public $selectedTimeSlotId = null;
+    public $editingScheduleId = null;
+    public ?array $manualData = [];
+
+    public $classList;
+    public $subjectList;
+    public $roomList;
+
     protected $academicYearRepository;
     protected $scheduleRepository;
     protected $scheduleRuleRepository;
     protected $teacherRepository;
+    protected $academicClassRepository;
+    protected $subjectRepository;
+    protected $roomRepository;
+    protected $timeSlotRepository;
 
     public function boot(
         AcademicYearRepositoryInterface $academicYearRepository,
         ScheduleRepositoryInterface $scheduleRepository,
         ScheduleRuleRepositoryInterface $scheduleRuleRepository,
-        TeacherRepositoryInterface $teacherRepository
+        TeacherRepositoryInterface $teacherRepository,
+        AcademicClassRepositoryInterface $academicClassRepository,
+        SubjectRepositoryInterface $subjectRepository,
+        RoomRepositoryInterface $roomRepository,
+        TimeSlotRepositoryInterface $timeSlotRepository
     ) {
         $this->academicYearRepository = $academicYearRepository;
         $this->scheduleRepository = $scheduleRepository;
         $this->scheduleRuleRepository = $scheduleRuleRepository;
         $this->teacherRepository = $teacherRepository;
+        $this->academicClassRepository = $academicClassRepository;
+        $this->subjectRepository = $subjectRepository;
+        $this->roomRepository = $roomRepository;
+        $this->timeSlotRepository = $timeSlotRepository;
+
         $this->days = \App\Constants\AcademicConstants::DAYS;
+        $this->classList = $this->academicClassRepository->all();
+        $this->subjectList = $this->subjectRepository->all();
+        $this->roomList = $this->roomRepository->all();
     }
 
     public function mount()
@@ -71,6 +104,14 @@ class Scheduling extends Component
             $this->loadRules();
             $this->loadBreakTimes();
         }
+
+        $this->manualData = [
+            'class_id' => null,
+            'subject_id' => null,
+            'teacher_id' => null,
+            'room_id' => null,
+        ];
+        $this->form->fill();
     }
 
     public function loadRules()
@@ -87,10 +128,7 @@ class Scheduling extends Component
     {
         // For simplicity, we assume breaks are the same across all days
         // We get unique break time ranges from Monday
-        $breaks = \App\Models\TimeSlot::where('day', 1)
-            ->where('is_break', true)
-            ->orderBy('start_time')
-            ->get();
+        $breaks = $this->timeSlotRepository->findBy(['day' => 1, 'is_break' => true]);
 
         $this->breakTimes = $breaks->map(function ($slot) {
             return [
@@ -117,25 +155,13 @@ class Scheduling extends Component
 
     public function saveBreakTimes()
     {
-        // Update all TimeSlots across all days
-        // First, reset all is_break to false
-        \App\Models\TimeSlot::query()->update(['is_break' => false]);
-
-        foreach ($this->breakTimes as $break) {
-            if (empty($break['start']) || empty($break['end'])) continue;
-
-            // Mark slots that exactly match or overlap
-            \App\Models\TimeSlot::where('start_time', '>=', $break['start'] . ':00')
-                ->where('end_time', '<=', $break['end'] . ':00')
-                ->update(['is_break' => true]);
-        }
-
+        $this->timeSlotRepository->updateBreaks($this->breakTimes);
         $this->dispatch('notify', text: 'Break times updated successfully.', variant: 'success');
     }
 
     public function regenerateTimeSlots()
     {
-        \App\Models\TimeSlot::truncate();
+        $this->timeSlotRepository->truncate();
 
         foreach ($this->days as $dayNum => $dayName) {
             $config = $this->daySpecificConfig[$dayNum] ?? ['entry' => $this->entryTime, 'exit' => $this->exitTime];
@@ -159,7 +185,7 @@ class Scheduling extends Component
                     }
                 }
 
-                \App\Models\TimeSlot::create([
+                $this->timeSlotRepository->create([
                     'day' => $dayNum,
                     'start_time' => $currentStartTime->format('H:i:s'),
                     'end_time' => $endTime->format('H:i:s'),
@@ -190,7 +216,7 @@ class Scheduling extends Component
 
     public function generateSchedule()
     {
-        $year = AcademicYear::find($this->activeYearId);
+        $year = $this->academicYearRepository->find($this->activeYearId);
         $engine = new SchedulingEngine($year, $this->scheduleRepository, $this->useDynamicRooms);
         $count = $engine->generate();
 
@@ -231,6 +257,112 @@ class Scheduling extends Component
         $this->dispatch('notify', text: 'Schedules locked successfully.', variant: 'success');
     }
 
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Select::make('class_id')
+                    ->label('Class')
+                    ->placeholder('Select Class')
+                    ->options($this->academicClassRepository->all()->pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
+                Select::make('subject_id')
+                    ->label('Subject')
+                    ->placeholder('Select Subject')
+                    ->options($this->subjectList->pluck('name', 'id'))
+                    ->required()
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(fn ($set) => $set('teacher_id', null)),
+                Select::make('teacher_id')
+                    ->label('Teacher')
+                    ->placeholder('Select Teacher')
+                    ->options(function (Get $get) {
+                        $subjectId = $get('subject_id');
+                        
+                        if (! $subjectId) return [];
+
+                        return $this->teacherRepository->getTeachersBySubject($subjectId);
+                    })
+                    ->required()
+                    ->native(false)
+                    ->live(),
+                Select::make('room_id')
+                    ->label('Room')
+                    ->placeholder('Select Room')
+                    ->options($this->roomRepository->all()->pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
+            ])
+            ->statePath('manualData');
+    }
+
+    public function openAddModal($timeSlotId)
+    {
+        $this->resetManualForm();
+        $this->selectedTimeSlotId = $timeSlotId;
+        $this->form->fill();
+        $this->showManualModal = true;
+    }
+
+    public function openEditModal($scheduleId)
+    {
+        $this->resetManualForm();
+        $schedule = $this->scheduleRepository->find($scheduleId);
+        if ($schedule) {
+            $this->editingScheduleId = $schedule->id;
+            $this->selectedTimeSlotId = $schedule->time_slot_id;
+            $this->form->fill($schedule->toArray());
+            $this->showManualModal = true;
+        }
+    }
+
+    public function resetManualForm()
+    {
+        $this->editingScheduleId = null;
+        $this->selectedTimeSlotId = null;
+        $this->manualData = [
+            'class_id' => null,
+            'subject_id' => null,
+            'teacher_id' => null,
+            'room_id' => null,
+        ];
+        $this->form->fill();
+        $this->resetValidation();
+    }
+
+    public function saveManualSchedule()
+    {
+        $data = $this->form->getState();
+        
+        $slot = $this->timeSlotRepository->find($this->selectedTimeSlotId);
+        if (!$slot) return;
+
+        $scheduleData = array_merge($data, [
+            'academic_year_id' => $this->activeYearId,
+            'day' => $slot->day,
+            'time_slot_id' => $this->selectedTimeSlotId,
+            'status' => 'draft',
+        ]);
+
+        if ($this->editingScheduleId) {
+            $this->scheduleRepository->update($this->editingScheduleId, $scheduleData);
+        } else {
+            $this->scheduleRepository->create($scheduleData);
+        }
+
+        $this->showManualModal = false;
+        $this->dispatch('notify', text: 'Schedule saved manually.', variant: 'success');
+    }
+
+    public function deleteSchedule($id)
+    {
+        $this->scheduleRepository->delete($id);
+        $this->showManualModal = false;
+        $this->dispatch('notify', text: 'Schedule deleted.', variant: 'success');
+    }
+
     public function render()
     {
         $drafts = collect();
@@ -239,34 +371,30 @@ class Scheduling extends Component
         $days = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'];
 
         if (in_array($this->activeTab, ['simulate', 'publish']) && $this->activeYearId) {
-            $status = $this->activeTab === 'simulate' ? 'draft' : ['published', 'locked'];
+            $status = $this->activeTab === 'simulate' ? ['draft'] : ['published', 'locked'];
             
-            $query = \App\Models\Schedule::with(['academicClass', 'teacher', 'subject', 'room', 'timeSlot'])
-                ->where('academic_year_id', $this->activeYearId)
-                ->whereIn('status', is_array($status) ? $status : [$status]);
-
+            $filters = [];
             if ($this->previewFilterClass) {
-                $query->where('class_id', $this->previewFilterClass);
+                $filters['class_id'] = $this->previewFilterClass;
             }
-
             if ($this->previewFilterTeacher) {
-                $query->where('teacher_id', $this->previewFilterTeacher);
+                $filters['teacher_id'] = $this->previewFilterTeacher;
             }
 
-            $drafts = $query->orderBy('day')->orderBy('time_slot_id')->get();
-            $allTimeSlots = \App\Models\TimeSlot::orderBy('start_time')->get();
-            $uniqueTimeRanges = $allTimeSlots->groupBy(function($slot) {
+            $drafts = $this->scheduleRepository->getSchedulesWithRelations($this->activeYearId, $status, $filters);
+            $allTimeSlots = $this->timeSlotRepository->all();
+            $uniqueTimeRanges = $allTimeSlots->sortBy('start_time')->groupBy(function($slot) {
                 return substr($slot->start_time, 0, 5) . '-' . substr($slot->end_time, 0, 5);
             })->keys()->toArray();
 
             // Structure data: $calendarData[day] = [blocks...]
             // We'll use Monday (day 1) as reference for time slots structure
-            $refSlots = \App\Models\TimeSlot::where('day', 1)->orderBy('start_time')->get();
+            $refSlots = $this->timeSlotRepository->getByDay(1);
             
             foreach ($days as $dayNum => $dayName) {
                 $calendarData[$dayNum] = [];
                 $processedIndices = [];
-                $daySlots = \App\Models\TimeSlot::where('day', $dayNum)->orderBy('start_time')->get()->values();
+                $daySlots = $this->timeSlotRepository->getByDay($dayNum)->values();
                 $breakCount = 0;
 
                 for ($i = 0; $i < $daySlots->count(); $i++) {
@@ -296,6 +424,7 @@ class Scheduling extends Component
                     if ($items->isEmpty()) {
                         $calendarData[$dayNum][] = [
                             'type' => 'empty',
+                            'id' => $currentSlot->id,
                             'span' => 1
                         ];
                         $processedIndices[] = $i;
@@ -333,10 +462,7 @@ class Scheduling extends Component
 
         return view('livewire.academic.scheduling', [
             'academicYears' => $this->academicYearRepository->all(),
-            'teachers' => Teacher::with(['config' => function($q) {
-                $q->where('academic_year_id', $this->activeYearId);
-            }])->get(),
-            'classes' => \App\Models\AcademicClass::all(),
+            'teachers' => $this->teacherRepository->getTeachersWithConfig($this->activeYearId ?? 0),
             'draftSchedules' => $drafts,
             'calendarData' => $calendarData,
             'timeSlots' => $timeSlots,
