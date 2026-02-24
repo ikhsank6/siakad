@@ -59,9 +59,14 @@ interface RepositoryInterface
     public function search(array $searchable, ?string $term = null, int $perPage = 10): LengthAwarePaginator;
 
     /**
-     * Get the underlying model.
+     * Find a record by criteria.
      */
-    public function getModel(): Model;
+    public function findOneBy(array $criteria): ?Model;
+
+    /**
+     * Get records by criteria.
+     */
+    public function findBy(array $criteria): Collection;
 
     /**
      * Create a new query builder.

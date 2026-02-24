@@ -10,6 +10,7 @@ use App\Models\TimeSlot;
 use App\Repositories\Contracts\AcademicYearRepositoryInterface;
 use App\Repositories\Contracts\ScheduleRepositoryInterface;
 use App\Repositories\Contracts\TeacherRepositoryInterface;
+use App\Repositories\Contracts\StudentRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -23,19 +24,23 @@ class MySchedule extends Component
     public $filterClassId = '';
     public $filterTeacherId = '';
     public $isTeacher = false;
+    public $isStudent = false;
 
     protected $academicYearRepository;
     protected $scheduleRepository;
     protected $teacherRepository;
+    protected $studentRepository;
 
     public function boot(
         AcademicYearRepositoryInterface $academicYearRepository,
         ScheduleRepositoryInterface $scheduleRepository,
-        TeacherRepositoryInterface $teacherRepository
+        TeacherRepositoryInterface $teacherRepository,
+        StudentRepositoryInterface $studentRepository
     ) {
         $this->academicYearRepository = $academicYearRepository;
         $this->scheduleRepository = $scheduleRepository;
         $this->teacherRepository = $teacherRepository;
+        $this->studentRepository = $studentRepository;
     }
 
     public function mount()
@@ -49,6 +54,12 @@ class MySchedule extends Component
         if ($teacher) {
             $this->filterTeacherId = $teacher->id;
             $this->isTeacher = true;
+        }
+
+        $student = $this->studentRepository->findByUserId(Auth::id());
+        if ($student) {
+            $this->filterClassId = $student->class_id;
+            $this->isStudent = true;
         }
     }
 

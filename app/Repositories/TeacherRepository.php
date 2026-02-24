@@ -57,6 +57,6 @@ class TeacherRepository extends BaseRepository implements TeacherRepositoryInter
 
     public function findByUserId(int $userId)
     {
-        return $this->model->where('user_id', $userId)->first();
+        return $this->findOneBy(['user_id' => $userId]);
     }
 }

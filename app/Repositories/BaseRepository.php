@@ -118,6 +118,22 @@ abstract class BaseRepository implements RepositoryInterface
     }
 
     /**
+     * Find a record by criteria.
+     */
+    public function findOneBy(array $criteria): ?Model
+    {
+        return $this->model->where($criteria)->first();
+    }
+
+    /**
+     * Get records by criteria.
+     */
+    public function findBy(array $criteria): Collection
+    {
+        return $this->model->where($criteria)->get();
+    }
+
+    /**
      * Get the underlying model.
      */
     public function getModel(): Model

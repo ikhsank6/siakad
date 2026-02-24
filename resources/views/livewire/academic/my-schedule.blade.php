@@ -23,7 +23,8 @@
                 <div class="space-y-4">
                     <h3 class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-widest">Filters</h3>
 
-                    <flux:select wire:model.live="filterClassId" label="Class" placeholder="All Classes">
+                    <flux:select wire:model.live="filterClassId" label="Class" placeholder="All Classes"
+                        :disabled="$isStudent">
                         <flux:select.option value="">All Classes</flux:select.option>
                         @if($classes instanceof \Illuminate\Support\Collection || is_array($classes))
                             @foreach($classes as $class)
@@ -32,15 +33,17 @@
                         @endif
                     </flux:select>
 
-                    <flux:select wire:model.live="filterTeacherId" label="Teacher" placeholder="All Teachers"
-                        :disabled="$isTeacher">
-                        <flux:select.option value="">All Teachers</flux:select.option>
-                        @if($teachers instanceof \Illuminate\Support\Collection || is_array($teachers))
-                            @foreach($teachers as $teacher)
-                                <flux:select.option value="{{ $teacher->id }}">{{ $teacher->name }}</flux:select.option>
-                            @endforeach
-                        @endif
-                    </flux:select>
+                    @unless($isStudent)
+                        <flux:select wire:model.live="filterTeacherId" label="Teacher" placeholder="All Teachers"
+                            :disabled="$isTeacher">
+                            <flux:select.option value="">All Teachers</flux:select.option>
+                            @if($teachers instanceof \Illuminate\Support\Collection || is_array($teachers))
+                                @foreach($teachers as $teacher)
+                                    <flux:select.option value="{{ $teacher->id }}">{{ $teacher->name }}</flux:select.option>
+                                @endforeach
+                            @endif
+                        </flux:select>
+                    @endunless
                 </div>
             </x-ui.card>
 

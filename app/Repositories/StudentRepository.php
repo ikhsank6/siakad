@@ -11,4 +11,9 @@ class StudentRepository extends BaseRepository implements StudentRepositoryInter
     {
         parent::__construct($model);
     }
+
+    public function findByUserId(int $userId)
+    {
+        return $this->findOneBy(['user_id' => $userId]);
+    }
 }
