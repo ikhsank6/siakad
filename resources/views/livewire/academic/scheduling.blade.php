@@ -371,6 +371,128 @@
                             </flux:button>
                         </div>
                     </div>
+
+                    @if(count($draftSchedules) > 0 || $previewFilterClass || $previewFilterTeacher)
+                        <div class="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h4 class="text-base font-bold text-zinc-900 dark:text-white">Active Schedule View</h4>
+                                    <p class="text-xs text-zinc-500">Overview of the currently active/locked schedules.</p>
+                                </div>
+                            </div>
+
+                            <div class="mb-6 flex flex-col sm:flex-row gap-4">
+                                <flux:select wire:model.live="previewFilterClass" placeholder="Filter by Class" class="flex-1">
+                                    <flux:select.option value="">All Classes</flux:select.option>
+                                    @foreach($classes ?? collect() as $c)
+                                        <flux:select.option value="{{ $c->id }}">{{ $c->name }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+
+                                <flux:select wire:model.live="previewFilterTeacher" placeholder="Filter by Teacher"
+                                    class="flex-1">
+                                    <flux:select.option value="">All Teachers</flux:select.option>
+                                    @foreach($teachers ?? collect() as $t)
+                                        <flux:select.option value="{{ $t->id }}">{{ $t->name }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            </div>
+
+                            <div class="relative overflow-hidden group">
+                                <div
+                                    class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/30 style-scrollbar">
+                                    @php
+                                        $dayShortLabels = \App\Constants\AcademicConstants::DAY_SHORT_LABELS;
+                                        $headerSlots = \App\Models\TimeSlot::where('day', 1)->orderBy('start_time')->get();
+                                    @endphp
+
+                                    <table class="w-full text-xs text-center border-collapse">
+                                        <thead
+                                            class="bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white font-black sticky top-0 z-20">
+                                            <tr>
+                                                <th rowspan="2"
+                                                    class="border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 w-16">
+                                                </th>
+                                                @php $periodIdx = 1; @endphp
+                                                @foreach($headerSlots ?? [] as $slot)
+                                                    <th
+                                                        class="border border-zinc-200 dark:border-zinc-700 px-2 py-4 text-lg font-black text-metronic-primary">
+                                                        @if(!$slot->is_break) {{ $periodIdx++ }} @endif
+                                                    </th>
+                                                @endforeach
+                                            </tr>
+                                            <tr>
+                                                @foreach($headerSlots ?? [] as $slot)
+                                                    <th
+                                                        class="border border-zinc-200 dark:border-zinc-700 px-1 py-1.5 text-[10px] font-bold text-zinc-500 bg-zinc-50/50 dark:bg-zinc-800/50">
+                                                        {{ substr($slot->start_time, 0, 5) }} - {{ substr($slot->end_time, 0, 5) }}
+                                                    </th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($days as $dayNum => $dayName)
+                                                <tr class="h-32">
+                                                    <td
+                                                        class="border border-zinc-200 dark:border-zinc-700 text-2xl font-black px-4 bg-zinc-50/50 dark:bg-zinc-800/50">
+                                                        {{ $dayShortLabels[$dayNum] ?? '' }}
+                                                    </td>
+                                                    @foreach($calendarData[$dayNum] ?? [] as $block)
+                                                        <td colspan="{{ $block['span'] }}"
+                                                            class="border border-zinc-200 dark:border-zinc-700 p-1 relative min-w-[120px] {{ $block['type'] === 'break' ? 'bg-zinc-50/30' : '' }}">
+                                                            @if($block['type'] === 'break')
+                                                                <div class="flex flex-col items-center justify-center p-2 h-full">
+                                                                    <span
+                                                                        class="text-[9px] font-bold uppercase tracking-[0.3em] text-zinc-300 dark:text-zinc-600 -rotate-180 [writing-mode:vertical-lr] whitespace-nowrap">
+                                                                        {{ $block['name'] }}
+                                                                    </span>
+                                                                </div>
+                                                            @elseif($block['type'] === 'subject')
+                                                                <div class="flex flex-col gap-1.5 p-1 h-full justify-center">
+                                                                    @foreach($block['items'] as $item)
+                                                                        <div
+                                                                            class="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-lg p-2 shadow-sm flex flex-col items-center text-center">
+                                                                            <div
+                                                                                class="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 mb-0.5 leading-tight uppercase">
+                                                                                {{ $item->subject->name }}
+                                                                            </div>
+                                                                            <div
+                                                                                class="text-[8px] text-zinc-400 dark:text-zinc-500 mb-2 font-medium">
+                                                                                {{ $item->teacher->name }}
+                                                                            </div>
+                                                                            <div class="flex items-center gap-1 mt-auto">
+                                                                                <div
+                                                                                    class="px-1 py-0.5 rounded border border-green-500/20 bg-green-50 text-green-600 text-[8px] font-black uppercase">
+                                                                                    R.{{ preg_replace('/[^0-9]/', '', $item->room->name) ?: $item->room->name }}
+                                                                                </div>
+                                                                                <div
+                                                                                    class="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">
+                                                                                    {{ $item->academicClass->name }}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div
+                            class="mt-8 p-12 text-center bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700">
+                            <flux:icon.document-text class="mx-auto h-12 w-12 text-zinc-400 mb-4" />
+                            <h3 class="text-lg font-bold text-zinc-900 dark:text-white">No Final Schedule Yet</h3>
+                            <p class="text-sm text-zinc-500 max-w-xs mx-auto mt-2">
+                                Complete the simulation and publish the results to see the final schedule here.
+                            </p>
+                        </div>
+                    @endif
                 </x-ui.card>
             @endif
         </div>

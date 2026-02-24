@@ -39,7 +39,7 @@ class Scheduling extends Component
     public $editingTeacherName = '';
     public $editingMinHours = null;
     public $editingMaxHours = null;
-    public $days = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'];
+    public $days;
 
     // Filters for Preview
     public $previewFilterClass = null;
@@ -60,6 +60,7 @@ class Scheduling extends Component
         $this->scheduleRepository = $scheduleRepository;
         $this->scheduleRuleRepository = $scheduleRuleRepository;
         $this->teacherRepository = $teacherRepository;
+        $this->days = \App\Constants\AcademicConstants::DAYS;
     }
 
     public function mount()
@@ -237,10 +238,12 @@ class Scheduling extends Component
         $timeSlots = collect();
         $days = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday'];
 
-        if ($this->activeTab === 'simulate' && $this->activeYearId) {
+        if (in_array($this->activeTab, ['simulate', 'publish']) && $this->activeYearId) {
+            $status = $this->activeTab === 'simulate' ? 'draft' : ['published', 'locked'];
+            
             $query = \App\Models\Schedule::with(['academicClass', 'teacher', 'subject', 'room', 'timeSlot'])
                 ->where('academic_year_id', $this->activeYearId)
-                ->where('status', 'draft');
+                ->whereIn('status', is_array($status) ? $status : [$status]);
 
             if ($this->previewFilterClass) {
                 $query->where('class_id', $this->previewFilterClass);

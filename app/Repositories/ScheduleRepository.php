@@ -43,6 +43,15 @@ class ScheduleRepository extends BaseRepository implements ScheduleRepositoryInt
         });
     }
 
+    public function getTeacherSchedule(int $teacherId, int $academicYearId): \Illuminate\Support\Collection
+    {
+        return $this->model->with(['academicClass', 'subject', 'room', 'timeSlot'])
+            ->where('teacher_id', $teacherId)
+            ->where('academic_year_id', $academicYearId)
+            ->whereIn('status', ['published', 'locked'])
+            ->get();
+    }
+
     public function lock(int $academicYearId): bool
     {
         return DB::transaction(function () use ($academicYearId) {
@@ -50,5 +59,26 @@ class ScheduleRepository extends BaseRepository implements ScheduleRepositoryInt
                 ->where('status', 'published')
                 ->update(['status' => 'locked']);
         });
+    }
+
+    public function getFilteredSchedules(int $academicYearId, array $filters = []): \Illuminate\Support\Collection
+    {
+        $query = $this->model->with(['academicClass', 'subject', 'room', 'teacher', 'timeSlot'])
+            ->where('academic_year_id', $academicYearId)
+            ->whereIn('status', ['published', 'locked']);
+
+        if (!empty($filters['teacher_id'])) {
+            $query->where('teacher_id', $filters['teacher_id']);
+        }
+
+        if (!empty($filters['class_id'])) {
+            $query->where('class_id', $filters['class_id']);
+        }
+
+        if (!empty($filters['room_id'])) {
+            $query->where('room_id', $filters['room_id']);
+        }
+
+        return $query->get();
     }
 }

@@ -22,7 +22,17 @@ interface ScheduleRepositoryInterface extends RepositoryInterface
     public function publish(int $academicYearId): bool;
 
     /**
+     * Get published/locked schedule for a specific teacher and academic year.
+     */
+    public function getTeacherSchedule(int $teacherId, int $academicYearId): \Illuminate\Support\Collection;
+
+    /**
      * Lock schedules for an academic year.
      */
     public function lock(int $academicYearId): bool;
+
+    /**
+     * Get filtered schedules.
+     */
+    public function getFilteredSchedules(int $academicYearId, array $filters = []): \Illuminate\Support\Collection;
 }

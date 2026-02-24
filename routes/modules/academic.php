@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('academic')->name('academic.')->group(function () {
     Route::get('/scheduling', Scheduling::class)->name('scheduling.index');
+    Route::get('/my-schedule', \App\Livewire\Academic\MySchedule::class)->name('my-schedule');
+    Route::get('/my-schedule/export', [\App\Http\Controllers\Academic\ScheduleExportController::class, 'exportTeacherSchedule'])->name('my-schedule.export');
     Route::get('/academic-years', AcademicYearIndex::class)->name('academic-years.index');
     Route::get('/subjects', SubjectIndex::class)->name('subjects.index');
     Route::get('/classes', ClassIndex::class)->name('classes.index');
